@@ -37,7 +37,7 @@ export default function Cardapio() {
   const [activeCategory, setActiveCategory] = useState('hamburgueres')
   const [showScrollButton, setShowScrollButton] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const categoriasRef = useRef<(HTMLDivElement | null)[]>([])
+  const categoriasRef = useRef<(HTMLElement | null)[]>([])
   
   const [modalOpen, setModalOpen] = useState(false)
   const [itemSelecionado, setItemSelecionado] = useState<ItemCardapio | null>(null)
