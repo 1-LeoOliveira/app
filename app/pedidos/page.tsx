@@ -6,12 +6,20 @@ import { Home, ArrowLeft, Trash2, Plus, Minus } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
+interface CarrinhoItem {
+  id: string;
+  nome: string;
+  preco: number;
+  quantidade: number;
+  imagem?: string;
+  opcaoSelecionada?: string;
+}
+
 export default function PedidosPage() {
   const router = useRouter()
-  const [carrinho, setCarrinho] = useState<any[]>([])
+  const [carrinho, setCarrinho] = useState<CarrinhoItem[]>([])
   const [carregando, setCarregando] = useState(true)
   const [numeroPedido, setNumeroPedido] = useState<string>('')
-
   // Gera número de pedido aleatório ao montar o componente
   useEffect(() => {
     const numero = Math.floor(10000 + Math.random() * 90000).toString()

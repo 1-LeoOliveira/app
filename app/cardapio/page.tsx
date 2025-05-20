@@ -6,17 +6,49 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Home, ChevronUp, ShoppingCart, Menu, X } from 'lucide-react'
 
+interface OpcaoComPreco {
+  nome: string;
+  preco: number;
+}
+
+interface CarrinhoItem {
+  id: string;
+  nome: string;
+  preco: number;
+  quantidade: number;
+  imagem?: string;
+  opcoesSelecionadas?: string[];
+  descricao?: string;
+}
+
+interface CardapioItem {
+  id: string;
+  nome: string;
+  descricao: string;
+  preco: number;
+  imagem: string;
+  opcoes?: string[] | OpcaoComPreco[];
+}
+
+interface Categoria {
+  nome: string;
+  itens: CardapioItem[];
+}
+
+interface CardapioData {
+  categorias: Categoria[];
+}
+
 export default function Cardapio() {
-  const [carrinho, setCarrinho] = useState<any[]>([])
+  const [carrinho, setCarrinho] = useState<CarrinhoItem[]>([])
   const [activeCategory, setActiveCategory] = useState('hamburgueres')
   const [showScrollButton, setShowScrollButton] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const categoriasRef = useRef<HTMLDivElement[]>([])
+  const categoriasRef = useRef<(HTMLDivElement | null)[]>([])
   
-  // Estados para modal de opções
   const [modalOpen, setModalOpen] = useState(false)
-  const [itemSelecionado, setItemSelecionado] = useState<any>(null)
-  const [opcoesSelecionadas, setOpcoesSelecionadas] = useState<any>({})
+  const [itemSelecionado, setItemSelecionado] = useState<CardapioItem | null>(null)
+  const [opcoesSelecionadas, setOpcoesSelecionadas] = useState<Record<string, boolean | string>>({})
   const [quantidade, setQuantidade] = useState(1)
 
   // Carrega carrinho do localStorage ao montar o componente
@@ -42,8 +74,8 @@ export default function Cardapio() {
       setShowScrollButton(window.scrollY > 300)
       
       categoriasRef.current.forEach((ref, index) => {
-        if (ref && window.scrollY >= ref.offsetTop - 120) {
-          setActiveCategory(cardapio.categorias[index].nome.toLowerCase())
+        if (ref && (cardapio as CardapioData).categorias[index] && window.scrollY >= ref.offsetTop - 120) {
+          setActiveCategory((cardapio as CardapioData).categorias[index].nome.toLowerCase())
         }
       })
     }
@@ -52,41 +84,39 @@ export default function Cardapio() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Função para abrir modal de opções
-  const abrirModalOpcoes = (item: any) => {
+  const abrirModalOpcoes = (item: CardapioItem) => {
     setItemSelecionado(item)
     setOpcoesSelecionadas({})
     setQuantidade(1)
     setModalOpen(true)
   }
 
-  // Função para adicionar ao carrinho sem opções
-  const adicionarAoCarrinhoSemOpcoes = (item: any) => {
-    const novoItem = {
-      ...item,
-      quantidade: 1
+  const adicionarAoCarrinhoSemOpcoes = (item: CardapioItem) => {
+    const novoItem: CarrinhoItem = {
+      id: item.id,
+      nome: item.nome,
+      preco: item.preco,
+      quantidade: 1,
+      imagem: item.imagem,
+      descricao: item.descricao
     }
     setCarrinho([...carrinho, novoItem])
   }
 
-  // Função para adicionar ao carrinho com opções selecionadas
   const adicionarAoCarrinhoComOpcoes = () => {
     if (!itemSelecionado) return
     
-    // Formatando as opções selecionadas para um formato mais amigável
     const opcoesFormatadas: string[] = []
     
-    if (Array.isArray(itemSelecionado.opcoes)) {
-      // Se as opções são strings simples, apenas adiciona a opção selecionada
+    if (itemSelecionado.opcoes && Array.isArray(itemSelecionado.opcoes)) {
       if (typeof itemSelecionado.opcoes[0] === 'string') {
-        if (opcoesSelecionadas.opcao) {
+        if (opcoesSelecionadas.opcao && typeof opcoesSelecionadas.opcao === 'string') {
           opcoesFormatadas.push(opcoesSelecionadas.opcao)
         }
       } else {
-        // Se as opções têm nome e preço, adiciona as opções selecionadas
         Object.keys(opcoesSelecionadas).forEach(key => {
           if (opcoesSelecionadas[key]) {
-            const opcao = itemSelecionado.opcoes.find((opt: any) => opt.nome === key)
+            const opcao = (itemSelecionado.opcoes as OpcaoComPreco[]).find(opt => opt.nome === key)
             if (opcao) {
               opcoesFormatadas.push(`${opcao.nome} (+R$ ${opcao.preco.toFixed(2)})`)
             }
@@ -95,13 +125,12 @@ export default function Cardapio() {
       }
     }
     
-    // Calcula o preço total com as opções adicionais
     let precoTotal = itemSelecionado.preco
     
-    if (Array.isArray(itemSelecionado.opcoes) && typeof itemSelecionado.opcoes[0] !== 'string') {
+    if (itemSelecionado.opcoes && Array.isArray(itemSelecionado.opcoes) && typeof itemSelecionado.opcoes[0] !== 'string') {
       Object.keys(opcoesSelecionadas).forEach(key => {
         if (opcoesSelecionadas[key]) {
-          const opcao = itemSelecionado.opcoes.find((opt: any) => opt.nome === key)
+          const opcao = (itemSelecionado.opcoes as OpcaoComPreco[]).find(opt => opt.nome === key)
           if (opcao && opcao.preco) {
             precoTotal += opcao.preco
           }
@@ -109,7 +138,7 @@ export default function Cardapio() {
       })
     }
     
-    const novoItem = {
+    const novoItem: CarrinhoItem = {
       ...itemSelecionado,
       preco: precoTotal,
       quantidade: quantidade,
@@ -120,12 +149,10 @@ export default function Cardapio() {
     setModalOpen(false)
   }
 
-  // Manipula a seleção de opção para listas simples (sem preço)
   const handleOpcaoSimples = (opcao: string) => {
     setOpcoesSelecionadas({ opcao })
   }
 
-  // Manipula a seleção de opção para itens com preço adicional
   const handleOpcaoComPreco = (nome: string, checked: boolean) => {
     setOpcoesSelecionadas({
       ...opcoesSelecionadas,
@@ -146,18 +173,15 @@ export default function Cardapio() {
     setMobileMenuOpen(false)
   }
   
-  // Ajusta o estilo para imagens com background
-  const getBackgroundStyle = (imageSrc) => {
-    // Se for hamburger ou produto que precisa de fundo branco
+  const getBackgroundStyle = (imageSrc: string): string => {
     if (imageSrc.includes('hamburguer') || imageSrc.includes('frango') || imageSrc.includes('lanche')) {
-      return 'bg-white';
+      return 'bg-white'
     }
-    return '';
+    return ''
   }
 
-  // Verifica se o item possui opções
-  const temOpcoes = (item: any) => {
-    return item.opcoes && item.opcoes.length > 0;
+  const temOpcoes = (item: CardapioItem): boolean => {
+    return !!item.opcoes && item.opcoes.length > 0
   }
 
   return (
@@ -198,7 +222,7 @@ export default function Cardapio() {
           {/* Menu Horizontal (Desktop) */}
           <nav className="hidden md:flex justify-center py-2 border-t">
             <div className="flex space-x-1">
-              {cardapio.categorias.map((categoria, index) => (
+              {(cardapio as CardapioData).categorias.map((categoria, index) => (
                 <button
                   key={categoria.nome}
                   onClick={() => scrollToCategory(index)}
@@ -230,7 +254,7 @@ export default function Cardapio() {
             </div>
             
             <nav className="p-2">
-              {cardapio.categorias.map((categoria, index) => (
+              {(cardapio as CardapioData).categorias.map((categoria, index) => (
                 <button
                   key={categoria.nome}
                   onClick={() => scrollToCategory(index)}
@@ -250,10 +274,10 @@ export default function Cardapio() {
 
       {/* Conteúdo Principal */}
       <main className="pt-32 pb-12 container mx-auto px-4">
-        {cardapio.categorias.map((categoria, index) => (
+        {(cardapio as CardapioData).categorias.map((categoria, index) => (
           <section 
             key={categoria.nome}
-            ref={el => categoriasRef.current[index] = el as HTMLDivElement}
+            ref={el => categoriasRef.current[index] = el}
             className="mb-16"
             id={categoria.nome.toLowerCase()}
           >
@@ -292,8 +316,8 @@ export default function Cardapio() {
                     {temOpcoes(item) && (
                       <div className="mb-3 text-xs text-gray-500">
                         {Array.isArray(item.opcoes) && typeof item.opcoes[0] === 'object' 
-                          ? `Opções: ${item.opcoes.map((opt: any) => opt.nome).join(', ')}`
-                          : `Opções: ${item.opcoes.join(', ')}`
+                          ? `Opções: ${(item.opcoes as OpcaoComPreco[]).map(opt => opt.nome).join(', ')}`
+                          : `Opções: ${(item.opcoes as string[]).join(', ')}`
                         }
                       </div>
                     )}
@@ -331,7 +355,6 @@ export default function Cardapio() {
               <p className="font-bold">R$ {itemSelecionado.preco.toFixed(2)}</p>
             </div>
             
-            {/* Opções do item */}
             {itemSelecionado.opcoes && itemSelecionado.opcoes.length > 0 && (
               <div className="mb-6">
                 <h4 className="font-semibold mb-2">
@@ -341,10 +364,9 @@ export default function Cardapio() {
                   }
                 </h4>
                 
-                {/* Opções com string simples (selecionar uma) */}
                 {Array.isArray(itemSelecionado.opcoes) && typeof itemSelecionado.opcoes[0] === 'string' && (
                   <div className="space-y-2">
-                    {itemSelecionado.opcoes.map((opcao: string, i: number) => (
+                    {(itemSelecionado.opcoes as string[]).map((opcao, i) => (
                       <div key={i} className="flex items-center">
                         <input 
                           type="radio"
@@ -361,10 +383,9 @@ export default function Cardapio() {
                   </div>
                 )}
                 
-                {/* Opções com nome e preço (selecionar múltiplas) */}
                 {Array.isArray(itemSelecionado.opcoes) && typeof itemSelecionado.opcoes[0] === 'object' && (
                   <div className="space-y-2">
-                    {itemSelecionado.opcoes.map((opcao: any, i: number) => (
+                    {(itemSelecionado.opcoes as OpcaoComPreco[]).map((opcao, i) => (
                       <div key={i} className="flex items-center justify-between">
                         <div className="flex items-center">
                           <input 
@@ -384,7 +405,6 @@ export default function Cardapio() {
               </div>
             )}
             
-            {/* Controle de quantidade */}
             <div className="mb-6">
               <h4 className="font-semibold mb-2">Quantidade</h4>
               <div className="flex items-center border rounded-md w-32">
@@ -404,7 +424,6 @@ export default function Cardapio() {
               </div>
             </div>
             
-            {/* Botão de adicionar ao carrinho */}
             <button
               onClick={adicionarAoCarrinhoComOpcoes}
               className="w-full bg-gray-800 text-white py-3 rounded-lg hover:bg-gray-700 transition-colors"
