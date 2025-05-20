@@ -7,7 +7,7 @@ export default function Home() {
       <div className="text-center bg-white p-8 rounded-xl shadow-md w-full max-w-md mx-4">
         <div className="mb-6">
           <Image 
-            src="/img/restaurante-logo.png" 
+            src="/logo.png" 
             alt="Logo do Restaurante" 
             width={160}
             height={160}

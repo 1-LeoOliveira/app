@@ -28,6 +28,16 @@ interface ItemCarrinho {
   }> | string[]
 }
 
+interface TaxaEntrega {
+  regiao: string
+  valor: number
+}
+
+interface Localizacao {
+  latitude: number
+  longitude: number
+}
+
 interface PedidoCompleto {
   numeroPedido: string
   itens: ItemCarrinho[]
@@ -35,16 +45,25 @@ interface PedidoCompleto {
     nome: string
     telefone: string
     endereco: string
-    localizacao?: string
+    regiao: string
+    localizacao?: Localizacao | null
     observacoes?: string
   }
   pagamento: string
+  taxaEntrega: number
 }
 
 const paymentMethods = [
   { id: 'dinheiro', name: 'Dinheiro' },
   { id: 'pix', name: 'PIX' },
   { id: 'cartao', name: 'Cartão' }
+]
+
+const taxasEntrega: TaxaEntrega[] = [
+  { regiao: "Ananindeua Centro", valor: 10.00 },
+  { regiao: "Cidade Nova", valor: 10.00 },
+  { regiao: "Distrito", valor: 15.00 },
+  { regiao: "Outras regiões", valor: 20.00 }
 ]
 
 function CheckoutContent() {
@@ -56,7 +75,7 @@ function CheckoutContent() {
     nome: '',
     telefone: '',
     endereco: '',
-    localizacao: '',
+    localizacao: null as Localizacao | null,
     observacoes: ''
   })
   const [metodoPagamento, setMetodoPagamento] = useState('dinheiro')
@@ -66,6 +85,8 @@ function CheckoutContent() {
   const [locationError, setLocationError] = useState('')
   const [showLocationOption, setShowLocationOption] = useState(false)
   const [numeroPedido, setNumeroPedido] = useState('')
+  const [regiaoSelecionada, setRegiaoSelecionada] = useState('')
+  const [taxaEntrega, setTaxaEntrega] = useState(0)
   const chavePix = "lanchonete@exemplo.com"
 
   // Gera número de pedido aleatório ao montar o componente
@@ -106,6 +127,19 @@ function CheckoutContent() {
     localStorage.setItem('carrinho', JSON.stringify(carrinho))
   }, [carrinho])
 
+  // Atualiza taxa de entrega quando região muda
+  useEffect(() => {
+    if (regiaoSelecionada) {
+      const taxa = taxasEntrega.find(t => t.regiao === regiaoSelecionada)?.valor || 0
+      setTaxaEntrega(taxa)
+    } else {
+      setTaxaEntrega(0)
+    }
+  }, [regiaoSelecionada])
+
+  const valorTotal = carrinho.reduce((total, item) => 
+    total + item.preco * item.quantidade, 0) + taxaEntrega
+
   const copiarChavePix = async () => {
     try {
       await navigator.clipboard.writeText(chavePix)
@@ -114,6 +148,14 @@ function CheckoutContent() {
     } catch (err) {
       console.error('Erro ao copiar:', err)
     }
+  }
+
+  const getGoogleMapsLink = (lat: number, lng: number) => {
+    return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+  }
+
+  const getWazeLink = (lat: number, lng: number) => {
+    return `https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes`
   }
 
   const getLocation = () => {
@@ -131,7 +173,10 @@ function CheckoutContent() {
         const { latitude, longitude } = position.coords
         setDadosCliente(prev => ({ 
           ...prev, 
-          localizacao: `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`
+          localizacao: {
+            latitude,
+            longitude
+          }
         }))
         setIsLoadingLocation(false)
         setShowLocationOption(true)
@@ -159,6 +204,11 @@ function CheckoutContent() {
       return
     }
 
+    if (!regiaoSelecionada) {
+      alert('Por favor, selecione sua região')
+      return
+    }
+
     if (!metodoPagamento) {
       alert('Por favor, selecione o método de pagamento')
       return
@@ -167,8 +217,12 @@ function CheckoutContent() {
     const pedidoCompleto: PedidoCompleto = {
       numeroPedido,
       itens: carrinho,
-      cliente: dadosCliente,
-      pagamento: metodoPagamento
+      cliente: {
+        ...dadosCliente,
+        regiao: regiaoSelecionada
+      },
+      pagamento: metodoPagamento,
+      taxaEntrega
     }
 
     const mensagemWhatsApp = gerarMensagemWhatsApp(pedidoCompleto)
@@ -184,9 +238,12 @@ function CheckoutContent() {
     mensagem += `*Cliente:* ${pedido.cliente.nome}\n`
     mensagem += `*Telefone:* ${pedido.cliente.telefone}\n`
     mensagem += `*Endereço:* ${pedido.cliente.endereco}\n`
+    mensagem += `*Região:* ${pedido.cliente.regiao}\n`
     
     if (pedido.cliente.localizacao) {
-      mensagem += `*Localização:* ${pedido.cliente.localizacao}\n`
+      mensagem += `*Localização:*\n`
+      mensagem += `- Google Maps: ${getGoogleMapsLink(pedido.cliente.localizacao.latitude, pedido.cliente.localizacao.longitude)}\n`
+      mensagem += `- Waze: ${getWazeLink(pedido.cliente.localizacao.latitude, pedido.cliente.localizacao.longitude)}\n`
     }
     
     mensagem += `\n*Itens do Pedido:*\n`
@@ -200,8 +257,11 @@ function CheckoutContent() {
       }
     })
   
-    mensagem += `\n*Valor Total:* R$ ${pedido.itens.reduce((total, item) => 
-      total + item.preco * item.quantidade, 0).toFixed(2)}\n\n`
+    mensagem += `\n*Subtotal:* R$ ${pedido.itens.reduce((total, item) => 
+      total + item.preco * item.quantidade, 0).toFixed(2)}\n`
+    mensagem += `*Taxa de Entrega:* R$ ${pedido.taxaEntrega.toFixed(2)}\n`
+    mensagem += `*Valor Total:* R$ ${(pedido.itens.reduce((total, item) => 
+      total + item.preco * item.quantidade, 0) + pedido.taxaEntrega).toFixed(2)}\n\n`
   
     mensagem += `*Método de Pagamento:* ${paymentMethods.find(m => m.id === pedido.pagamento)?.name || pedido.pagamento.toUpperCase()}\n`
   
@@ -211,10 +271,6 @@ function CheckoutContent() {
   
     return mensagem
   }
-
-  const valorTotal = carrinho.reduce((total, item) =>
-    total + item.preco * item.quantidade, 0
-  )
 
   const removerItem = (itemId: string) => {
     const novoCarrinho = carrinho.filter(item => item.id !== itemId)
@@ -229,6 +285,11 @@ function CheckoutContent() {
     
     if (etapaAtual === 2 && !dadosCliente.endereco) {
       alert('Por favor, informe seu endereço')
+      return
+    }
+
+    if (etapaAtual === 2 && !regiaoSelecionada) {
+      alert('Por favor, selecione sua região')
       return
     }
 
@@ -290,6 +351,23 @@ function CheckoutContent() {
               />
             </div>
             
+            <div>
+              <label className="block mb-2 text-gray-700 text-sm">Região de Entrega*</label>
+              <select
+                value={regiaoSelecionada}
+                onChange={(e) => setRegiaoSelecionada(e.target.value)}
+                className="w-full border rounded p-2 text-gray-800 bg-white focus:ring-2 focus:ring-gray-300 text-sm"
+                required
+              >
+                <option value="">Selecione sua região</option>
+                {taxasEntrega.map((taxa) => (
+                  <option key={taxa.regiao} value={taxa.regiao}>
+                    {taxa.regiao} - R$ {taxa.valor.toFixed(2)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
             <div className="space-y-2">
               <button
                 type="button"
@@ -318,12 +396,29 @@ function CheckoutContent() {
               </button>
               
               {showLocationOption && dadosCliente.localizacao && (
-                <div className="p-3 bg-gray-100 rounded-lg">
-                  <p className="text-sm text-gray-700">Localização obtida:</p>
-                  <p className="text-xs text-gray-600">{dadosCliente.localizacao}</p>
+                <div className="p-3 bg-gray-100 rounded-lg space-y-2">
+                  <p className="text-sm text-gray-700">Localização obtida com sucesso!</p>
+                  <div className="flex space-x-2 mt-2">
+                    <a
+                      href={getGoogleMapsLink(dadosCliente.localizacao.latitude, dadosCliente.localizacao.longitude)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                    >
+                      Abrir no Google Maps
+                    </a>
+                    <a
+                      href={getWazeLink(dadosCliente.localizacao.latitude, dadosCliente.localizacao.longitude)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+                    >
+                      Abrir no Waze
+                    </a>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setDadosCliente(prev => ({ ...prev, localizacao: '' }))}
+                    onClick={() => setDadosCliente(prev => ({ ...prev, localizacao: null }))}
                     className="text-red-500 text-xs mt-1"
                   >
                     Remover localização
@@ -503,9 +598,21 @@ function CheckoutContent() {
                 ))}
               </div>
               <div className="mt-4 pt-2 border-t border-gray-200 text-right">
-                <span className="font-bold text-gray-800 text-lg">
-                  Total: R$ {valorTotal.toFixed(2)}
-                </span>
+                <div className="flex justify-between mb-1">
+                  <span className="text-gray-600">Subtotal:</span>
+                  <span className="text-gray-800">R$ {carrinho.reduce((total, item) => 
+                    total + item.preco * item.quantidade, 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-gray-600">Taxa de Entrega:</span>
+                  <span className="text-gray-800">R$ {taxaEntrega.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between mt-2">
+                  <span className="font-bold text-gray-800">Total:</span>
+                  <span className="font-bold text-lg text-gray-800">
+                    R$ {valorTotal.toFixed(2)}
+                  </span>
+                </div>
               </div>
             </div>
 
