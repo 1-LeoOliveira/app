@@ -6,7 +6,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Home, ChevronUp, ShoppingCart, Menu, X } from 'lucide-react'
 
-// Interfaces de tipo
 interface OpcaoItem {
   nome: string;
   preco?: number;
@@ -31,7 +30,6 @@ interface CarrinhoItem extends Omit<ItemCardapio, 'opcoes'> {
   opcoesSelecionadas?: string[];
 }
 
-// Tipagem do JSON importado
 const cardapio: { categorias: Categoria[] } = cardapioData as { categorias: Categoria[] };
 
 export default function Cardapio() {
@@ -46,7 +44,6 @@ export default function Cardapio() {
   const [opcoesSelecionadas, setOpcoesSelecionadas] = useState<Record<string, boolean | string>>({})
   const [quantidade, setQuantidade] = useState(1)
 
-  // Carrega carrinho do localStorage
   useEffect(() => {
     const carrinhoSalvo = localStorage.getItem('carrinho')
     if (carrinhoSalvo) {
@@ -54,7 +51,6 @@ export default function Cardapio() {
     }
   }, [])
 
-  // Salva carrinho no localStorage
   useEffect(() => {
     if (carrinho.length > 0) {
       localStorage.setItem('carrinho', JSON.stringify(carrinho))
@@ -63,7 +59,6 @@ export default function Cardapio() {
     }
   }, [carrinho])
 
-  // Configura observador de scroll
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollButton(window.scrollY > 300)
@@ -106,12 +101,10 @@ export default function Cardapio() {
 
     if (itemSelecionado.opcoes && Array.isArray(itemSelecionado.opcoes)) {
       if (typeof itemSelecionado.opcoes[0] === 'string') {
-        // Opções simples (string)
         if (typeof opcoesSelecionadas.opcao === 'string') {
           opcoesFormatadas.push(opcoesSelecionadas.opcao)
         }
       } else {
-        // Opções com preço
         (itemSelecionado.opcoes as OpcaoItem[]).forEach(opcao => {
           if (opcoesSelecionadas[opcao.nome]) {
             opcoesFormatadas.push(`${opcao.nome}${opcao.preco ? ` (+R$ ${opcao.preco.toFixed(2)})` : ''}`)
@@ -174,7 +167,6 @@ export default function Cardapio() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header Fixo */}
       <header className="fixed top-0 left-0 right-0 bg-white shadow-md z-20">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
@@ -193,10 +185,7 @@ export default function Cardapio() {
                 <Menu size={24} />
               </button>
               
-              <Link
-                href="/pedidos"
-                className="relative p-2 text-gray-700"
-              >
+              <Link href="/pedidos" className="relative p-2 text-gray-700">
                 <ShoppingCart size={24} />
                 {carrinho.length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -207,7 +196,6 @@ export default function Cardapio() {
             </div>
           </div>
           
-          {/* Menu Horizontal (Desktop) */}
           <nav className="hidden md:flex justify-center py-2 border-t">
             <div className="flex space-x-1">
               {cardapio.categorias.map((categoria, index) => (
@@ -228,7 +216,6 @@ export default function Cardapio() {
         </div>
       </header>
 
-      {/* Menu Mobile */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-30 md:hidden">
           <div 
@@ -260,12 +247,15 @@ export default function Cardapio() {
         </div>
       )}
 
-      {/* Conteúdo Principal */}
       <main className="pt-32 pb-12 container mx-auto px-4">
         {cardapio.categorias.map((categoria, index) => (
           <section 
             key={categoria.nome}
-            ref={el => categoriasRef.current[index] = el}
+            ref={el => {
+              if (el) {
+                categoriasRef.current[index] = el
+              }
+            }}
             className="mb-16"
             id={categoria.nome.toLowerCase()}
           >
@@ -324,7 +314,6 @@ export default function Cardapio() {
         ))}
       </main>
 
-      {/* Modal de Seleção de Opções */}
       {modalOpen && itemSelecionado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -424,7 +413,6 @@ export default function Cardapio() {
         </div>
       )}
 
-      {/* Botão para voltar ao topo */}
       {showScrollButton && (
         <button
           onClick={scrollToTop}
