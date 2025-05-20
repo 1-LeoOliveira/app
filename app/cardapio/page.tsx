@@ -1,43 +1,38 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import cardapio from '../../data/cardapio.json'
+import cardapioData from '../../data/cardapio.json'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Home, ChevronUp, ShoppingCart, Menu, X } from 'lucide-react'
 
-interface OpcaoComPreco {
+// Interfaces de tipo
+interface OpcaoItem {
   nome: string;
-  preco: number;
+  preco?: number;
 }
 
-interface CarrinhoItem {
-  id: string;
-  nome: string;
-  preco: number;
-  quantidade: number;
-  imagem?: string;
-  opcoesSelecionadas?: string[];
-  descricao?: string;
-}
-
-interface CardapioItem {
-  id: string;
+interface ItemCardapio {
+  id: number;
   nome: string;
   descricao: string;
   preco: number;
   imagem: string;
-  opcoes?: string[] | OpcaoComPreco[];
+  opcoes?: string[] | OpcaoItem[];
 }
 
 interface Categoria {
   nome: string;
-  itens: CardapioItem[];
+  itens: ItemCardapio[];
 }
 
-interface CardapioData {
-  categorias: Categoria[];
+interface CarrinhoItem extends Omit<ItemCardapio, 'opcoes'> {
+  quantidade: number;
+  opcoesSelecionadas?: string[];
 }
+
+// Tipagem do JSON importado
+const cardapio: { categorias: Categoria[] } = cardapioData as { categorias: Categoria[] };
 
 export default function Cardapio() {
   const [carrinho, setCarrinho] = useState<CarrinhoItem[]>([])
@@ -47,11 +42,11 @@ export default function Cardapio() {
   const categoriasRef = useRef<(HTMLDivElement | null)[]>([])
   
   const [modalOpen, setModalOpen] = useState(false)
-  const [itemSelecionado, setItemSelecionado] = useState<CardapioItem | null>(null)
+  const [itemSelecionado, setItemSelecionado] = useState<ItemCardapio | null>(null)
   const [opcoesSelecionadas, setOpcoesSelecionadas] = useState<Record<string, boolean | string>>({})
   const [quantidade, setQuantidade] = useState(1)
 
-  // Carrega carrinho do localStorage ao montar o componente
+  // Carrega carrinho do localStorage
   useEffect(() => {
     const carrinhoSalvo = localStorage.getItem('carrinho')
     if (carrinhoSalvo) {
@@ -59,7 +54,7 @@ export default function Cardapio() {
     }
   }, [])
 
-  // Salva carrinho no localStorage quando atualizado
+  // Salva carrinho no localStorage
   useEffect(() => {
     if (carrinho.length > 0) {
       localStorage.setItem('carrinho', JSON.stringify(carrinho))
@@ -74,8 +69,8 @@ export default function Cardapio() {
       setShowScrollButton(window.scrollY > 300)
       
       categoriasRef.current.forEach((ref, index) => {
-        if (ref && (cardapio as CardapioData).categorias[index] && window.scrollY >= ref.offsetTop - 120) {
-          setActiveCategory((cardapio as CardapioData).categorias[index].nome.toLowerCase())
+        if (ref && cardapio.categorias[index] && window.scrollY >= ref.offsetTop - 120) {
+          setActiveCategory(cardapio.categorias[index].nome.toLowerCase())
         }
       })
     }
@@ -84,21 +79,21 @@ export default function Cardapio() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const abrirModalOpcoes = (item: CardapioItem) => {
+  const abrirModalOpcoes = (item: ItemCardapio) => {
     setItemSelecionado(item)
     setOpcoesSelecionadas({})
     setQuantidade(1)
     setModalOpen(true)
   }
 
-  const adicionarAoCarrinhoSemOpcoes = (item: CardapioItem) => {
+  const adicionarAoCarrinhoSemOpcoes = (item: ItemCardapio) => {
     const novoItem: CarrinhoItem = {
       id: item.id,
       nome: item.nome,
+      descricao: item.descricao,
       preco: item.preco,
-      quantidade: 1,
       imagem: item.imagem,
-      descricao: item.descricao
+      quantidade: 1
     }
     setCarrinho([...carrinho, novoItem])
   }
@@ -107,44 +102,37 @@ export default function Cardapio() {
     if (!itemSelecionado) return
     
     const opcoesFormatadas: string[] = []
-    
+    let precoTotal = itemSelecionado.preco
+
     if (itemSelecionado.opcoes && Array.isArray(itemSelecionado.opcoes)) {
       if (typeof itemSelecionado.opcoes[0] === 'string') {
-        if (opcoesSelecionadas.opcao && typeof opcoesSelecionadas.opcao === 'string') {
+        // Opções simples (string)
+        if (typeof opcoesSelecionadas.opcao === 'string') {
           opcoesFormatadas.push(opcoesSelecionadas.opcao)
         }
       } else {
-        Object.keys(opcoesSelecionadas).forEach(key => {
-          if (opcoesSelecionadas[key]) {
-            const opcao = (itemSelecionado.opcoes as OpcaoComPreco[]).find(opt => opt.nome === key)
-            if (opcao) {
-              opcoesFormatadas.push(`${opcao.nome} (+R$ ${opcao.preco.toFixed(2)})`)
+        // Opções com preço
+        (itemSelecionado.opcoes as OpcaoItem[]).forEach(opcao => {
+          if (opcoesSelecionadas[opcao.nome]) {
+            opcoesFormatadas.push(`${opcao.nome}${opcao.preco ? ` (+R$ ${opcao.preco.toFixed(2)})` : ''}`)
+            if (opcao.preco) {
+              precoTotal += opcao.preco
             }
           }
         })
       }
     }
-    
-    let precoTotal = itemSelecionado.preco
-    
-    if (itemSelecionado.opcoes && Array.isArray(itemSelecionado.opcoes) && typeof itemSelecionado.opcoes[0] !== 'string') {
-      Object.keys(opcoesSelecionadas).forEach(key => {
-        if (opcoesSelecionadas[key]) {
-          const opcao = (itemSelecionado.opcoes as OpcaoComPreco[]).find(opt => opt.nome === key)
-          if (opcao && opcao.preco) {
-            precoTotal += opcao.preco
-          }
-        }
-      })
-    }
-    
+
     const novoItem: CarrinhoItem = {
-      ...itemSelecionado,
+      id: itemSelecionado.id,
+      nome: itemSelecionado.nome,
+      descricao: itemSelecionado.descricao,
       preco: precoTotal,
+      imagem: itemSelecionado.imagem,
       quantidade: quantidade,
-      opcoesSelecionadas: opcoesFormatadas
+      opcoesSelecionadas: opcoesFormatadas.length > 0 ? opcoesFormatadas : undefined
     }
-    
+
     setCarrinho([...carrinho, novoItem])
     setModalOpen(false)
   }
@@ -172,7 +160,7 @@ export default function Cardapio() {
     })
     setMobileMenuOpen(false)
   }
-  
+
   const getBackgroundStyle = (imageSrc: string): string => {
     if (imageSrc.includes('hamburguer') || imageSrc.includes('frango') || imageSrc.includes('lanche')) {
       return 'bg-white'
@@ -180,7 +168,7 @@ export default function Cardapio() {
     return ''
   }
 
-  const temOpcoes = (item: CardapioItem): boolean => {
+  const temOpcoes = (item: ItemCardapio): boolean => {
     return !!item.opcoes && item.opcoes.length > 0
   }
 
@@ -222,7 +210,7 @@ export default function Cardapio() {
           {/* Menu Horizontal (Desktop) */}
           <nav className="hidden md:flex justify-center py-2 border-t">
             <div className="flex space-x-1">
-              {(cardapio as CardapioData).categorias.map((categoria, index) => (
+              {cardapio.categorias.map((categoria, index) => (
                 <button
                   key={categoria.nome}
                   onClick={() => scrollToCategory(index)}
@@ -254,7 +242,7 @@ export default function Cardapio() {
             </div>
             
             <nav className="p-2">
-              {(cardapio as CardapioData).categorias.map((categoria, index) => (
+              {cardapio.categorias.map((categoria, index) => (
                 <button
                   key={categoria.nome}
                   onClick={() => scrollToCategory(index)}
@@ -274,7 +262,7 @@ export default function Cardapio() {
 
       {/* Conteúdo Principal */}
       <main className="pt-32 pb-12 container mx-auto px-4">
-        {(cardapio as CardapioData).categorias.map((categoria, index) => (
+        {cardapio.categorias.map((categoria, index) => (
           <section 
             key={categoria.nome}
             ref={el => categoriasRef.current[index] = el}
@@ -316,7 +304,7 @@ export default function Cardapio() {
                     {temOpcoes(item) && (
                       <div className="mb-3 text-xs text-gray-500">
                         {Array.isArray(item.opcoes) && typeof item.opcoes[0] === 'object' 
-                          ? `Opções: ${(item.opcoes as OpcaoComPreco[]).map(opt => opt.nome).join(', ')}`
+                          ? `Opções: ${(item.opcoes as OpcaoItem[]).map(opt => opt.nome).join(', ')}`
                           : `Opções: ${(item.opcoes as string[]).join(', ')}`
                         }
                       </div>
@@ -385,7 +373,7 @@ export default function Cardapio() {
                 
                 {Array.isArray(itemSelecionado.opcoes) && typeof itemSelecionado.opcoes[0] === 'object' && (
                   <div className="space-y-2">
-                    {(itemSelecionado.opcoes as OpcaoComPreco[]).map((opcao, i) => (
+                    {(itemSelecionado.opcoes as OpcaoItem[]).map((opcao, i) => (
                       <div key={i} className="flex items-center justify-between">
                         <div className="flex items-center">
                           <input 
@@ -397,7 +385,9 @@ export default function Cardapio() {
                           />
                           <label htmlFor={`opcao-${i}`} className="text-gray-700">{opcao.nome}</label>
                         </div>
-                        <span className="text-gray-600">+ R$ {opcao.preco.toFixed(2)}</span>
+                        {opcao.preco && (
+                          <span className="text-gray-600">+ R$ {opcao.preco.toFixed(2)}</span>
+                        )}
                       </div>
                     ))}
                   </div>
