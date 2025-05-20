@@ -20,6 +20,7 @@ export default function PedidosPage() {
   const [carrinho, setCarrinho] = useState<CarrinhoItem[]>([])
   const [carregando, setCarregando] = useState(true)
   const [numeroPedido, setNumeroPedido] = useState<string>('')
+
   // Gera número de pedido aleatório ao montar o componente
   useEffect(() => {
     const numero = Math.floor(10000 + Math.random() * 90000).toString()
@@ -30,9 +31,9 @@ export default function PedidosPage() {
   useEffect(() => {
     const carrinhoSalvo = localStorage.getItem('carrinho')
     if (carrinhoSalvo) {
-      const itens = JSON.parse(carrinhoSalvo)
+      const itens: CarrinhoItem[] = JSON.parse(carrinhoSalvo)
       // Adiciona quantidade se não existir
-      const itensComQuantidade = itens.map((item: any) => ({
+      const itensComQuantidade = itens.map((item) => ({
         ...item,
         quantidade: item.quantidade || 1
       }))
@@ -53,21 +54,21 @@ export default function PedidosPage() {
   }, [carrinho, carregando])
 
   // Calcula total
-  const calcularTotal = () => {
+  const calcularTotal = (): number => {
     return carrinho.reduce((soma, item) => soma + (item.preco * item.quantidade), 0)
   }
 
   // Remove item do carrinho
-  const removerItem = (idItem: string) => {
+  const removerItem = (idItem: string): void => {
     const novoCarrinho = carrinho.filter(item => item.id !== idItem)
     setCarrinho(novoCarrinho)
   }
 
   // Adiciona quantidade ao item
-  const aumentarQuantidade = (idItem: string) => {
+  const aumentarQuantidade = (idItem: string): void => {
     const novoCarrinho = carrinho.map(item => {
       if (item.id === idItem) {
-        return { ...item, quantidade: (item.quantidade || 1) + 1 }
+        return { ...item, quantidade: item.quantidade + 1 }
       }
       return item
     })
@@ -75,7 +76,7 @@ export default function PedidosPage() {
   }
 
   // Diminui quantidade do item
-  const diminuirQuantidade = (idItem: string) => {
+  const diminuirQuantidade = (idItem: string): void => {
     const novoCarrinho = carrinho.map(item => {
       if (item.id === idItem && item.quantidade > 1) {
         return { ...item, quantidade: item.quantidade - 1 }
@@ -86,7 +87,7 @@ export default function PedidosPage() {
   }
 
   // Prosseguir para checkout
-  const prosseguirParaCheckout = () => {
+  const prosseguirParaCheckout = (): void => {
     const carrinhoParam = encodeURIComponent(JSON.stringify(carrinho))
     router.push(`/checkout?carrinho=${carrinhoParam}`)
   }
