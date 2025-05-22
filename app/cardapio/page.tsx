@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import cardapioData from '../../data/cardapio.json'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Home, ChevronUp, ShoppingCart, Menu, X } from 'lucide-react'
+import { Home, ChevronUp, ShoppingCart, Menu, X, Check } from 'lucide-react'
 
 interface OpcaoItem {
   nome: string;
@@ -30,6 +30,16 @@ interface CarrinhoItem extends Omit<ItemCardapio, 'opcoes'> {
   opcoesSelecionadas?: string[];
 }
 
+interface FlyingItem {
+  id: number;
+  nome: string;
+  imagem: string;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+}
+
 const cardapio: { categorias: Categoria[] } = cardapioData as { categorias: Categoria[] };
 
 export default function Cardapio() {
@@ -43,6 +53,12 @@ export default function Cardapio() {
   const [itemSelecionado, setItemSelecionado] = useState<ItemCardapio | null>(null)
   const [opcoesSelecionadas, setOpcoesSelecionadas] = useState<Record<string, boolean | string>>({})
   const [quantidade, setQuantidade] = useState(1)
+  
+  // Estados para animação
+  const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([])
+  const [cartShake, setCartShake] = useState(false)
+  const [flyingId, setFlyingId] = useState(0)
+  const cartRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const carrinhoSalvo = localStorage.getItem('carrinho')
@@ -74,6 +90,37 @@ export default function Cardapio() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Função para criar animação de voo
+  const createFlyingAnimation = (item: ItemCardapio, sourceElement: HTMLElement) => {
+    if (!cartRef.current) return
+
+    const sourceRect = sourceElement.getBoundingClientRect()
+    const cartRect = cartRef.current.getBoundingClientRect()
+    
+    const newFlyingId = flyingId + 1
+    setFlyingId(newFlyingId)
+
+    const flyingItem: FlyingItem = {
+      id: newFlyingId,
+      nome: item.nome,
+      imagem: item.imagem,
+      startX: sourceRect.left + sourceRect.width / 2,
+      startY: sourceRect.top + sourceRect.height / 2,
+      endX: cartRect.left + cartRect.width / 2,
+      endY: cartRect.top + cartRect.height / 2
+    }
+
+    setFlyingItems(prev => [...prev, flyingItem])
+
+    // Remove o item voador após a animação
+    setTimeout(() => {
+      setFlyingItems(prev => prev.filter(f => f.id !== newFlyingId))
+      // Trigger cart shake
+      setCartShake(true)
+      setTimeout(() => setCartShake(false), 600)
+    }, 800)
+  }
+
   const abrirModalOpcoes = (item: ItemCardapio) => {
     setItemSelecionado(item)
     setOpcoesSelecionadas({})
@@ -81,7 +128,7 @@ export default function Cardapio() {
     setModalOpen(true)
   }
 
-  const adicionarAoCarrinhoSemOpcoes = (item: ItemCardapio) => {
+  const adicionarAoCarrinhoSemOpcoes = (item: ItemCardapio, event: React.MouseEvent<HTMLButtonElement>) => {
     const novoItem: CarrinhoItem = {
       id: item.id,
       nome: item.nome,
@@ -91,6 +138,13 @@ export default function Cardapio() {
       quantidade: 1
     }
     setCarrinho([...carrinho, novoItem])
+    
+    // Criar animação de voo
+    const button = event.currentTarget
+    const productCard = button.closest('.product-card') as HTMLElement
+    if (productCard) {
+      createFlyingAnimation(item, productCard)
+    }
   }
 
   const adicionarAoCarrinhoComOpcoes = () => {
@@ -101,8 +155,8 @@ export default function Cardapio() {
 
     if (itemSelecionado.opcoes && Array.isArray(itemSelecionado.opcoes)) {
       if (typeof itemSelecionado.opcoes[0] === 'string') {
-        if (typeof opcoesSelecionadas.opcao === 'string') {
-          opcoesFormatadas.push(opcoesSelecionadas.opcao)
+        if (opcoesSelecionadas.opcao) {
+          opcoesFormatadas.push(opcoesSelecionadas.opcao as string)
         }
       } else {
         (itemSelecionado.opcoes as OpcaoItem[]).forEach(opcao => {
@@ -128,6 +182,10 @@ export default function Cardapio() {
 
     setCarrinho([...carrinho, novoItem])
     setModalOpen(false)
+    
+    // Trigger cart shake diretamente para modal
+    setCartShake(true)
+    setTimeout(() => setCartShake(false), 600)
   }
 
   const handleOpcaoSimples = (opcao: string) => {
@@ -167,6 +225,32 @@ export default function Cardapio() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Flying Items */}
+      {flyingItems.map((flyingItem) => (
+        <div
+          key={flyingItem.id}
+          className="fixed pointer-events-none z-50"
+          style={{
+            left: `${flyingItem.startX}px`,
+            top: `${flyingItem.startY}px`,
+            transform: 'translate(-50%, -50%)',
+            animation: `flyToCart 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`
+          }}
+        >
+          <div className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-green-400">
+            <div className="w-8 h-8 relative">
+              <Image
+                src={flyingItem.imagem}
+                alt={flyingItem.nome}
+                fill
+                className="object-contain rounded"
+                sizes="32px"
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+
       <header className="fixed top-0 left-0 right-0 bg-white shadow-md z-20">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
@@ -186,12 +270,24 @@ export default function Cardapio() {
               </button>
               
               <Link href="/pedidos" className="relative p-2 text-gray-700">
-                <ShoppingCart size={24} />
-                {carrinho.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {carrinho.length}
-                  </span>
-                )}
+                <div 
+                  ref={cartRef}
+                  className={`transition-transform duration-150 ${
+                    cartShake ? 'animate-bounce' : ''
+                  }`}
+                >
+                  <ShoppingCart 
+                    size={24} 
+                    className={cartShake ? 'text-green-600' : ''}
+                  />
+                  {carrinho.length > 0 && (
+                    <span className={`absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center transition-all duration-300 ${
+                      cartShake ? 'animate-pulse bg-green-500 scale-110' : ''
+                    }`}>
+                      {carrinho.length}
+                    </span>
+                  )}
+                </div>
               </Link>
             </div>
           </div>
@@ -265,7 +361,7 @@ export default function Cardapio() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {categoria.itens.map(item => (
-                <div key={item.id} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 hover:shadow-lg transition-all duration-300 cursor-pointer">
+                <div key={item.id} className="product-card bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 hover:shadow-lg transition-all duration-300 cursor-pointer">
                   <div className={`relative h-48 overflow-hidden group ${getBackgroundStyle(item.imagem)}`}>
                     <Image
                       src={item.imagem}
@@ -301,8 +397,8 @@ export default function Cardapio() {
                     )}
                     
                     <button
-                      onClick={() => temOpcoes(item) ? abrirModalOpcoes(item) : adicionarAoCarrinhoSemOpcoes(item)}
-                      className="w-full bg-gray-800 text-white py-2 rounded hover:bg-gray-700 transition-colors text-sm"
+                      onClick={(e) => temOpcoes(item) ? abrirModalOpcoes(item) : adicionarAoCarrinhoSemOpcoes(item, e)}
+                      className="w-full bg-gray-800 text-white py-2 rounded hover:bg-gray-700 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95"
                     >
                       {temOpcoes(item) ? "Selecionar Opções" : "Adicionar ao Carrinho"}
                     </button>
@@ -405,7 +501,7 @@ export default function Cardapio() {
             
             <button
               onClick={adicionarAoCarrinhoComOpcoes}
-              className="w-full bg-gray-800 text-white py-3 rounded-lg hover:bg-gray-700 transition-colors"
+              className="w-full bg-gray-800 text-white py-3 rounded-lg hover:bg-gray-700 transition-all duration-200 transform hover:scale-105 active:scale-95"
             >
               Adicionar ao Carrinho
             </button>
@@ -422,6 +518,40 @@ export default function Cardapio() {
           <ChevronUp size={24} />
         </button>
       )}
+
+      <style jsx>{`
+        @keyframes flyToCart {
+          0% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: translate(
+              calc(${flyingItems[0]?.endX || 0}px - ${flyingItems[0]?.startX || 0}px - 50%), 
+              calc(${flyingItems[0]?.endY || 0}px - ${flyingItems[0]?.startY || 0}px - 150px)
+            ) scale(0.8);
+            opacity: 0.8;
+          }
+          100% {
+            transform: translate(
+              calc(${flyingItems[0]?.endX || 0}px - ${flyingItems[0]?.startX || 0}px - 50%), 
+              calc(${flyingItems[0]?.endY || 0}px - ${flyingItems[0]?.startY || 0}px - 50%)
+            ) scale(0.3);
+            opacity: 0;
+          }
+        }
+        
+        .animate-bounce {
+          animation: cartBounce 0.6s ease-in-out;
+        }
+        
+        @keyframes cartBounce {
+          0%, 100% { transform: translateY(0); }
+          25% { transform: translateY(-8px) rotate(-5deg); }
+          50% { transform: translateY(0) rotate(5deg); }
+          75% { transform: translateY(-4px) rotate(-2deg); }
+        }
+      `}</style>
     </div>
   )
 }

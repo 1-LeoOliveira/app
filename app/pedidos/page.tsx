@@ -7,12 +7,13 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 interface CarrinhoItem {
-  id: string;
+  id: number;
   nome: string;
+  descricao?: string;
   preco: number;
   quantidade: number;
   imagem?: string;
-  opcaoSelecionada?: string;
+  opcoesSelecionadas?: string[];
 }
 
 export default function PedidosPage() {
@@ -21,18 +22,15 @@ export default function PedidosPage() {
   const [carregando, setCarregando] = useState(true)
   const [numeroPedido, setNumeroPedido] = useState<string>('')
 
-  // Gera número de pedido aleatório ao montar o componente
   useEffect(() => {
     const numero = Math.floor(10000 + Math.random() * 90000).toString()
     setNumeroPedido(numero)
   }, [])
 
-  // Carrega carrinho do localStorage ao montar o componente
   useEffect(() => {
     const carrinhoSalvo = localStorage.getItem('carrinho')
     if (carrinhoSalvo) {
       const itens: CarrinhoItem[] = JSON.parse(carrinhoSalvo)
-      // Adiciona quantidade se não existir
       const itensComQuantidade = itens.map((item) => ({
         ...item,
         quantidade: item.quantidade || 1
@@ -42,7 +40,6 @@ export default function PedidosPage() {
     setCarregando(false)
   }, [])
 
-  // Salva carrinho no localStorage quando atualizado
   useEffect(() => {
     if (!carregando) {
       if (carrinho.length > 0) {
@@ -53,19 +50,16 @@ export default function PedidosPage() {
     }
   }, [carrinho, carregando])
 
-  // Calcula total
   const calcularTotal = (): number => {
     return carrinho.reduce((soma, item) => soma + (item.preco * item.quantidade), 0)
   }
 
-  // Remove item do carrinho
-  const removerItem = (idItem: string): void => {
+  const removerItem = (idItem: number): void => {
     const novoCarrinho = carrinho.filter(item => item.id !== idItem)
     setCarrinho(novoCarrinho)
   }
 
-  // Adiciona quantidade ao item
-  const aumentarQuantidade = (idItem: string): void => {
+  const aumentarQuantidade = (idItem: number): void => {
     const novoCarrinho = carrinho.map(item => {
       if (item.id === idItem) {
         return { ...item, quantidade: item.quantidade + 1 }
@@ -75,8 +69,7 @@ export default function PedidosPage() {
     setCarrinho(novoCarrinho)
   }
 
-  // Diminui quantidade do item
-  const diminuirQuantidade = (idItem: string): void => {
+  const diminuirQuantidade = (idItem: number): void => {
     const novoCarrinho = carrinho.map(item => {
       if (item.id === idItem && item.quantidade > 1) {
         return { ...item, quantidade: item.quantidade - 1 }
@@ -86,7 +79,6 @@ export default function PedidosPage() {
     setCarrinho(novoCarrinho)
   }
 
-  // Prosseguir para checkout
   const prosseguirParaCheckout = (): void => {
     const carrinhoParam = encodeURIComponent(JSON.stringify(carrinho))
     router.push(`/checkout?carrinho=${carrinhoParam}`)
@@ -158,7 +150,6 @@ export default function PedidosPage() {
               <div className="space-y-4">
                 {carrinho.map(item => (
                   <div key={item.id} className="flex border-b pb-4">
-                    {/* Imagem (se disponível) */}
                     {item.imagem && (
                       <div className="w-20 h-20 flex-shrink-0 mr-4 relative rounded overflow-hidden">
                         <Image
@@ -171,7 +162,6 @@ export default function PedidosPage() {
                       </div>
                     )}
                     
-                    {/* Detalhes do Item */}
                     <div className="flex-1">
                       <div className="flex justify-between">
                         <h3 className="font-medium text-gray-800">{item.nome}</h3>
@@ -185,10 +175,13 @@ export default function PedidosPage() {
                       
                       <p className="text-sm text-gray-500 mb-2">
                         R$ {item.preco.toFixed(2)}
-                        {item.opcaoSelecionada && ` • ${item.opcaoSelecionada}`}
+                        {item.opcoesSelecionadas && item.opcoesSelecionadas.length > 0 && (
+                          <span className="block text-xs">
+                            {item.opcoesSelecionadas.join(', ')}
+                          </span>
+                        )}
                       </p>
                       
-                      {/* Controle de Quantidade */}
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center border rounded-md">
                           <button 
@@ -217,7 +210,6 @@ export default function PedidosPage() {
               </div>
             </div>
             
-            {/* Resumo e Total */}
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Resumo</h2>
               
@@ -238,7 +230,6 @@ export default function PedidosPage() {
               </div>
             </div>
             
-            {/* Botão de Finalizar */}
             <button
               onClick={prosseguirParaCheckout}
               className="w-full bg-gray-800 text-white py-4 rounded-lg font-medium hover:bg-gray-700 transition-colors"

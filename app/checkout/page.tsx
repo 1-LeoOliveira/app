@@ -15,17 +15,13 @@ import {
 } from "@/components/ui/dialog"
 
 interface ItemCarrinho {
-  id: string
+  id: number
   nome: string
   descricao?: string
   preco: number
   quantidade: number
   imagem?: string
-  opcaoSelecionada?: string
-  opcoes?: Array<{
-    nome: string
-    preco?: number
-  }> | string[]
+  opcoesSelecionadas?: string[]
 }
 
 interface TaxaEntrega {
@@ -252,8 +248,8 @@ function CheckoutContent() {
       if (item.descricao) {
         mensagem += `  ${item.descricao}\n`
       }
-      if (item.opcaoSelecionada) {
-        mensagem += `  Opção: ${item.opcaoSelecionada}\n`
+      if (item.opcoesSelecionadas && item.opcoesSelecionadas.length > 0) {
+        mensagem += `  Opções: ${item.opcoesSelecionadas.join(', ')}\n`
       }
     })
   
@@ -272,7 +268,7 @@ function CheckoutContent() {
     return mensagem
   }
 
-  const removerItem = (itemId: string) => {
+  const removerItem = (itemId: number) => {
     const novoCarrinho = carrinho.filter(item => item.id !== itemId)
     setCarrinho(novoCarrinho)
   }
@@ -578,7 +574,8 @@ function CheckoutContent() {
                       )}
                       <p className="text-sm text-gray-600">
                         Quantidade: {item.quantidade}
-                        {item.opcaoSelecionada && ` • ${item.opcaoSelecionada}`}
+                        {item.opcoesSelecionadas && item.opcoesSelecionadas.length > 0 && 
+                          ` • ${item.opcoesSelecionadas.join(', ')}`}
                       </p>
                     </div>
                     <div className="flex flex-col items-end ml-4">
