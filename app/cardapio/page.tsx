@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import cardapioData from '../../data/cardapio.json'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Home, ChevronUp, ShoppingCart, Menu, X, Check } from 'lucide-react'
+import { Home, ChevronUp, ShoppingCart, Menu, X } from 'lucide-react'
 
 interface OpcaoItem {
   nome: string;
