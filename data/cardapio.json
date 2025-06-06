@@ -6,6 +6,7 @@
         {
           "id": 1,
           "nome": "Clássico",
+          "categoria": "Hamburgueres",
           "descricao": "Pão brioche, hambúrguer 180g, queijo cheddar, alface, tomate e molho especial",
           "imagem": "/hamburgueres/classico.jpg",
           "preco": 28.90,
@@ -23,6 +24,7 @@
         {
           "id": 2,
           "nome": "Vegetariano",
+          "categoria": "Hamburgueres",
           "descricao": "Pão integral, hambúrguer de grão-de-bico, queijo coalho, rúcula e molho de iogurte",
           "imagem": "/hamburgueres/vegetariano.jpg",
           "preco": 32.90
@@ -30,6 +32,7 @@
         {
           "id": 3,
           "nome": "Bacon Crunch",
+          "categoria": "Hamburgueres",
           "descricao": "Pão brioche, hambúrguer 200g, queijo prato, bacon crocante, cebola caramelizada e molho barbecue",
           "imagem": "/hamburgueres/bacon.jpg",
           "preco": 34.90
@@ -37,6 +40,7 @@
         {
           "id": 4,
           "nome": "Frango Empanado",
+          "categoria": "Hamburgueres",
           "descricao": "Pão australiano, filé de frango empanado, queijo mussarela, alface e molho de ervas",
           "imagem": "/hamburgueres/frango.jpg",
           "preco": 29.90
@@ -44,6 +48,7 @@
         {
           "id": 5,
           "nome": "Costela BBQ",
+          "categoria": "Hamburgueres",
           "descricao": "Pão de brioche, hambúrguer de costela 200g, queijo cheddar, cebola roxa e molho barbecue",
           "imagem": "/hamburgueres/costela.jpg",
           "preco": 36.90
@@ -51,6 +56,7 @@
         {
           "id": 6,
           "nome": "Duplo Cheddar",
+          "categoria": "Hamburgueres",
           "descricao": "Pão brioche, 2 hambúrgueres 150g, duplo cheddar, cebola crispy e molho especial",
           "imagem": "/hamburgueres/duplo.jpg",
           "preco": 38.90
@@ -63,6 +69,7 @@
         {
           "id": 101,
           "nome": "Batata Frita",
+          "categoria": "Acompanhamentos",
           "descricao": "Porção de batata frita crocante com tempero da casa",
           "imagem": "/acompanhamentos/batata.jpg",
           "preco": 15.90,
@@ -80,6 +87,7 @@
         {
           "id": 102,
           "nome": "Onion Rings",
+          "categoria": "Acompanhamentos",
           "descricao": "Anéis de cebola empanados e crocantes",
           "imagem": "/acompanhamentos/onion.jpg",
           "preco": 12.90
@@ -87,6 +95,7 @@
         {
           "id": 103,
           "nome": "Nuggets de Frango",
+          "categoria": "Acompanhamentos",
           "descricao": "6 unidades de nuggets crocantes com molho à escolha",
           "imagem": "/acompanhamentos/nuggets.jpg",
           "preco": 14.90,
@@ -99,6 +108,7 @@
         {
           "id": 104,
           "nome": "Polenta Frita",
+          "categoria": "Acompanhamentos",
           "descricao": "Porção de polenta frita crocante",
           "imagem": "/acompanhamentos/polenta.jpg",
           "preco": 11.90
@@ -106,6 +116,7 @@
         {
           "id": 105,
           "nome": "Mandioca Frita",
+          "categoria": "Acompanhamentos",
           "descricao": "Porção de mandioca frita com tempero especial",
           "imagem": "/acompanhamentos/mandioca.jpg",
           "preco": 13.90
@@ -113,6 +124,7 @@
         {
           "id": 106,
           "nome": "Mix de Fritas",
+          "categoria": "Acompanhamentos",
           "descricao": "Porção com batata, mandioca e polenta fritas",
           "imagem": "/acompanhamentos/mix.jpg",
           "preco": 18.90
@@ -125,6 +137,7 @@
         {
           "id": 201,
           "nome": "Refrigerantes",
+          "categoria": "Bebidas",
           "descricao": "Lata 350ml",
           "imagem": "/bebidas/refri.jpg",
           "preco": 7.90,
@@ -137,6 +150,7 @@
         {
           "id": 202,
           "nome": "Sucos Naturais",
+          "categoria": "Bebidas",
           "descricao": "Copo 500ml",
           "imagem": "/bebidas/sucos.jpg",
           "preco": 10.90,
@@ -150,6 +164,7 @@
         {
           "id": 203,
           "nome": "Água Mineral",
+          "categoria": "Bebidas",
           "descricao": "Garrafa 500ml",
           "imagem": "/bebidas/agua.jpg",
           "preco": 4.90,
@@ -161,6 +176,7 @@
         {
           "id": 204,
           "nome": "Cervejas",
+          "categoria": "Bebidas",
           "descricao": "Long neck 355ml",
           "imagem": "/bebidas/cervejas.jpg",
           "preco": 8.90,
@@ -173,6 +189,7 @@
         {
           "id": 205,
           "nome": "Chá Gelado",
+          "categoria": "Bebidas",
           "descricao": "Copo 500ml",
           "imagem": "/bebidas/cha.jpg",
           "preco": 9.90,
@@ -185,6 +202,7 @@
         {
           "id": 206,
           "nome": "Energético",
+          "categoria": "Bebidas",
           "descricao": "Lata 250ml",
           "imagem": "/bebidas/energetico.jpg",
           "preco": 12.90,
@@ -201,6 +219,7 @@
         {
           "id": 301,
           "nome": "Milkshake",
+          "categoria": "Sobremesas",
           "descricao": "Copo 400ml com sorvete artesanal",
           "imagem": "/sobremesas/milk.jpg",
           "preco": 18.90,
@@ -213,6 +232,7 @@
         {
           "id": 302,
           "nome": "Brownie",
+          "categoria": "Sobremesas",
           "descricao": "Brownie de chocolate com sorvete de creme",
           "imagem": "/sobremesas/brownie.jpg",
           "preco": 14.90,
@@ -224,6 +244,7 @@
         {
           "id": 303,
           "nome": "Petit Gateau",
+          "categoria": "Sobremesas",
           "descricao": "Bolo de chocolate com recheio cremoso e sorvete",
           "imagem": "/sobremesas/petit.jpg",
           "preco": 19.90
@@ -231,6 +252,7 @@
         {
           "id": 304,
           "nome": "Torta de Limão",
+          "categoria": "Sobremesas",
           "descricao": "Fatia de torta de limão com merengue",
           "imagem": "/sobremesas/torta.jpg",
           "preco": 12.90
@@ -238,6 +260,7 @@
         {
           "id": 305,
           "nome": "Sorvete",
+          "categoria": "Sobremesas",
           "descricao": "3 bolas de sorvete artesanal",
           "imagem": "/sobremesas/sorvete.jpg",
           "preco": 13.90,
@@ -251,6 +274,7 @@
         {
           "id": 306,
           "nome": "Cheesecake",
+          "categoria": "Sobremesas",
           "descricao": "Fatia de cheesecake com calda de frutas vermelhas",
           "imagem": "/sobremesas/chees.jpg",
           "preco": 16.90,
