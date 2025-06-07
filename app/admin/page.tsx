@@ -58,6 +58,7 @@ function LoginSeguro({ onLoginSuccess }: { onLoginSuccess: () => void }) {
       }
     } catch (err) {
       setError('Erro de conexão. Tente novamente.');
+      console.error('[Login] Erro:', err);
     } finally {
       setLoading(false);
     }
@@ -178,8 +179,36 @@ export default function AdminPage() {
 
   // Verificar autenticação ao carregar
   useEffect(() => {
-    verificarAutenticacao();
-  }, []); // Removido buscarProdutos da dependência pois é chamado dentro de verificarAutenticacao
+    const verificarAuth = async () => {
+      try {
+        const token = localStorage.getItem('admin_token');
+        if (!token) {
+          setVerificandoAuth(false);
+          return;
+        }
+
+        const response = await fetch('/api/auth/verificar', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUsuario(data.user);
+          setAutenticado(true);
+          buscarProdutos(); // Carregar produtos após autenticação
+        } else {
+          localStorage.removeItem('admin_token');
+        }
+      } catch (err) {
+        localStorage.removeItem('admin_token');
+        console.error('[Auth] Erro na verificação:', err);
+      } finally {
+        setVerificandoAuth(false);
+      }
+    };
+
+    verificarAuth();
+  }, []); // Sem dependências externas
 
   const verificarAutenticacao = async () => {
     try {
@@ -203,6 +232,7 @@ export default function AdminPage() {
       }
     } catch (err) {
       localStorage.removeItem('admin_token');
+      console.error('[Auth] Erro na verificação:', err);
     } finally {
       setVerificandoAuth(false);
     }
