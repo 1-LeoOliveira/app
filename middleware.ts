@@ -1,25 +1,17 @@
-// middleware.ts
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname
-  const isAdminPath = path.startsWith('/admin')
-  const isLoginPath = path === '/admin/login'
-
-  // Se for uma rota admin e não for a rota de login
-  if (isAdminPath && !isLoginPath) {
-    // Verifica o cookie de autenticação
-    const adminAutenticado = request.cookies.get('adminAutenticado')?.value === 'true'
-
-    if (!adminAutenticado) {
-      return NextResponse.redirect(new URL('/admin/login', request.url))
-    }
+  // Apenas para rotas admin que precisam de proteção
+  if (request.nextUrl.pathname.startsWith('/api/admin/')) {
+    // Aqui você pode adicionar verificações adicionais se necessário
+    // Por enquanto, apenas permitir todas as requisições
+    return NextResponse.next();
   }
 
-  return NextResponse.next()
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
-}
+  matcher: ['/api/admin/:path*']
+};

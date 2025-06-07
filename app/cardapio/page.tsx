@@ -1,656 +1,452 @@
+// app/admin/page.tsx - Versão Simplificada
 'use client'
-import { useState, useEffect, useRef } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { Home, ChevronUp, ShoppingCart, Menu, RefreshCw, Wifi, WifiOff } from 'lucide-react'
-import { useDisponibilidadeProdutos } from '../../utils/googleSheets'
 
-// Dados do cardápio (mantido local para estrutura e preços)
-const cardapioData = {
-  "categorias": [
-    {
-      "nome": "Hamburgueres",
-      "itens": [
-        {
-          "id": 1,
-          "nome": "Clássico",
-          "categoria": "Hamburgueres",
-          "descricao": "Pão brioche, hambúrguer 180g, queijo cheddar, alface, tomate e molho especial",
-          "imagem": "/hamburgueres/classico.jpg",
-          "preco": 28.90,
-          "opcoes": [
-            {
-              "nome": "Bacon",
-              "preco": 5.00
-            },
-            {
-              "nome": "Ovo",
-              "preco": 3.00
-            }
-          ]
-        },
-        {
-          "id": 2,
-          "nome": "Vegetariano",
-          "categoria": "Hamburgueres",
-          "descricao": "Pão integral, hambúrguer de grão-de-bico, queijo coalho, rúcula e molho de iogurte",
-          "imagem": "/hamburgueres/vegetariano.jpg",
-          "preco": 32.90
-        },
-        {
-          "id": 3,
-          "nome": "Bacon Crunch",
-          "categoria": "Hamburgueres",
-          "descricao": "Pão brioche, hambúrguer 200g, queijo prato, bacon crocante, cebola caramelizada e molho barbecue",
-          "imagem": "/hamburgueres/bacon.jpg",
-          "preco": 34.90
-        },
-        {
-          "id": 4,
-          "nome": "Frango Empanado",
-          "categoria": "Hamburgueres",
-          "descricao": "Pão australiano, filé de frango empanado, queijo mussarela, alface e molho de ervas",
-          "imagem": "/hamburgueres/frango.jpg",
-          "preco": 29.90
-        },
-        {
-          "id": 5,
-          "nome": "Costela BBQ",
-          "categoria": "Hamburgueres",
-          "descricao": "Pão de brioche, hambúrguer de costela 200g, queijo cheddar, cebola roxa e molho barbecue",
-          "imagem": "/hamburgueres/costela.jpg",
-          "preco": 36.90
-        },
-        {
-          "id": 6,
-          "nome": "Duplo Cheddar",
-          "categoria": "Hamburgueres",
-          "descricao": "Pão brioche, 2 hambúrgueres 150g, duplo cheddar, cebola crispy e molho especial",
-          "imagem": "/hamburgueres/duplo.jpg",
-          "preco": 38.90
-        }
-      ]
-    },
-    {
-      "nome": "Acompanhamentos",
-      "itens": [
-        {
-          "id": 101,
-          "nome": "Batata Frita",
-          "categoria": "Acompanhamentos",
-          "descricao": "Porção de batata frita crocante com tempero da casa",
-          "imagem": "/acompanhamentos/batata.jpg",
-          "preco": 15.90,
-          "opcoes": [
-            {
-              "nome": "Pequena",
-              "preco": 10.90
-            },
-            {
-              "nome": "Grande",
-              "preco": 15.90
-            }
-          ]
-        },
-        {
-          "id": 102,
-          "nome": "Onion Rings",
-          "categoria": "Acompanhamentos",
-          "descricao": "Anéis de cebola empanados e crocantes",
-          "imagem": "/acompanhamentos/onion.jpg",
-          "preco": 12.90
-        },
-        {
-          "id": 103,
-          "nome": "Nuggets de Frango",
-          "categoria": "Acompanhamentos",
-          "descricao": "6 unidades de nuggets crocantes com molho à escolha",
-          "imagem": "/acompanhamentos/nuggets.jpg",
-          "preco": 14.90,
-          "opcoes": [
-            "Barbecue",
-            "Mostarda e Mel",
-            "Cheddar"
-          ]
-        },
-        {
-          "id": 104,
-          "nome": "Polenta Frita",
-          "categoria": "Acompanhamentos",
-          "descricao": "Porção de polenta frita crocante",
-          "imagem": "/acompanhamentos/polenta.jpg",
-          "preco": 11.90
-        },
-        {
-          "id": 105,
-          "nome": "Mandioca Frita",
-          "categoria": "Acompanhamentos",
-          "descricao": "Porção de mandioca frita com tempero especial",
-          "imagem": "/acompanhamentos/mandioca.jpg",
-          "preco": 13.90
-        },
-        {
-          "id": 106,
-          "nome": "Mix de Fritas",
-          "categoria": "Acompanhamentos",
-          "descricao": "Porção com batata, mandioca e polenta fritas",
-          "imagem": "/acompanhamentos/mix.jpg",
-          "preco": 18.90
-        }
-      ]
-    },
-    {
-      "nome": "Bebidas",
-      "itens": [
-        {
-          "id": 201,
-          "nome": "Refrigerantes",
-          "categoria": "Bebidas",
-          "descricao": "Lata 350ml",
-          "imagem": "/bebidas/refri.jpg",
-          "preco": 7.90,
-          "opcoes": [
-            "Coca-Cola",
-            "Guaraná",
-            "Fanta"
-          ]
-        },
-        {
-          "id": 202,
-          "nome": "Sucos Naturais",
-          "categoria": "Bebidas",
-          "descricao": "Copo 500ml",
-          "imagem": "/bebidas/sucos.jpg",
-          "preco": 10.90,
-          "opcoes": [
-            "Laranja",
-            "Abacaxi com Hortelã",
-            "Maracujá",
-            "Manga"
-          ]
-        },
-        {
-          "id": 203,
-          "nome": "Água Mineral",
-          "categoria": "Bebidas",
-          "descricao": "Garrafa 500ml",
-          "imagem": "/bebidas/agua.jpg",
-          "preco": 4.90,
-          "opcoes": [
-            "Com gás",
-            "Sem gás"
-          ]
-        },
-        {
-          "id": 204,
-          "nome": "Cervejas",
-          "categoria": "Bebidas",
-          "descricao": "Long neck 355ml",
-          "imagem": "/bebidas/cervejas.jpg",
-          "preco": 8.90,
-          "opcoes": [
-            "Pilsen",
-            "IPA",
-            "Weiss"
-          ]
-        },
-        {
-          "id": 205,
-          "nome": "Chá Gelado",
-          "categoria": "Bebidas",
-          "descricao": "Copo 500ml",
-          "imagem": "/bebidas/cha.jpg",
-          "preco": 9.90,
-          "opcoes": [
-            "Pêssego",
-            "Limão",
-            "Manga"
-          ]
-        },
-        {
-          "id": 206,
-          "nome": "Energético",
-          "categoria": "Bebidas",
-          "descricao": "Lata 250ml",
-          "imagem": "/bebidas/energetico.jpg",
-          "preco": 12.90,
-          "opcoes": [
-            "Original",
-            "Zero Açúcar"
-          ]
-        }
-      ]
-    },
-    {
-      "nome": "Sobremesas",
-      "itens": [
-        {
-          "id": 301,
-          "nome": "Milkshake",
-          "categoria": "Sobremesas",
-          "descricao": "Copo 400ml com sorvete artesanal",
-          "imagem": "/sobremesas/milk.jpg",
-          "preco": 18.90,
-          "opcoes": [
-            "Chocolate",
-            "Morango",
-            "Baunilha"
-          ]
-        },
-        {
-          "id": 302,
-          "nome": "Brownie",
-          "categoria": "Sobremesas",
-          "descricao": "Brownie de chocolate com sorvete de creme",
-          "imagem": "/sobremesas/brownie.jpg",
-          "preco": 14.90,
-          "opcoes": [
-            "Com calda de chocolate",
-            "Com calda de caramelo"
-          ]
-        },
-        {
-          "id": 303,
-          "nome": "Petit Gateau",
-          "categoria": "Sobremesas",
-          "descricao": "Bolo de chocolate com recheio cremoso e sorvete",
-          "imagem": "/sobremesas/petit.jpg",
-          "preco": 19.90
-        },
-        {
-          "id": 304,
-          "nome": "Torta de Limão",
-          "categoria": "Sobremesas",
-          "descricao": "Fatia de torta de limão com merengue",
-          "imagem": "/sobremesas/torta.jpg",
-          "preco": 12.90
-        },
-        {
-          "id": 305,
-          "nome": "Sorvete",
-          "categoria": "Sobremesas",
-          "descricao": "3 bolas de sorvete artesanal",
-          "imagem": "/sobremesas/sorvete.jpg",
-          "preco": 13.90,
-          "opcoes": [
-            "Chocolate",
-            "Morango",
-            "Creme",
-            "Flocos"
-          ]
-        },
-        {
-          "id": 306,
-          "nome": "Cheesecake",
-          "categoria": "Sobremesas",
-          "descricao": "Fatia de cheesecake com calda de frutas vermelhas",
-          "imagem": "/sobremesas/chees.jpg",
-          "preco": 16.90,
-          "opcoes": [
-            "Morango",
-            "Mirtilo",
-            "Maracujá"
-          ]
-        }
-      ]
-    }
-  ]
+import React, { useState, useEffect } from 'react';
+import { RefreshCw, CheckCircle, XCircle, AlertCircle, Eye, EyeOff, Settings, Save, Loader, Wifi, WifiOff, Home, LogOut } from 'lucide-react';
+import Link from 'next/link';
+
+// Interfaces
+interface ProdutoAdmin {
+  id: number;
+  nome: string;
+  disponivel: boolean;
+  categoria: string;
+  linha: number;
+}
+
+// Configuração
+const GOOGLE_SHEETS_API_KEY = 'AIzaSyA09Jv2bQ8DcdqtbL4Zje5WM2YAGJFI8S8';
+const SPREADSHEET_ID = '1PB83VB1tQj2mNTiEsk-FIOIDxjPsDDck-3LpeKjm9Q4';
+
+// Credenciais simples (em produção, use variáveis de ambiente)
+const ADMIN_CREDENTIALS = {
+  email: 'admin@hamburgueria.com',
+  senha: 'admin123'
 };
 
-interface OpcaoItem {
-  nome: string;
-  preco?: number;
-}
+// Componente de Login Simplificado
+function LoginSimples({ onLoginSuccess }: { onLoginSuccess: () => void }) {
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
 
-interface ItemCardapio {
-  id: number;
-  nome: string;
-  descricao: string;
-  preco: number;
-  imagem: string;
-  opcoes?: string[] | OpcaoItem[];
-}
-
-interface Categoria {
-  nome: string;
-  itens: ItemCardapio[];
-}
-
-interface CarrinhoItem extends Omit<ItemCardapio, 'opcoes'> {
-  quantidade: number;
-  opcoesSelecionadas?: string[];
-}
-
-interface FlyingItem {
-  id: number;
-  nome: string;
-  imagem: string;
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
-}
-
-const cardapio: { categorias: Categoria[] } = cardapioData as { categorias: Categoria[] };
-
-export default function Cardapio() {
-  const [carrinho, setCarrinho] = useState<CarrinhoItem[]>([])
-  const [activeCategory, setActiveCategory] = useState('hamburgueres')
-  const [showScrollButton, setShowScrollButton] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const categoriasRef = useRef<(HTMLElement | null)[]>([])
-  
-  const [modalOpen, setModalOpen] = useState(false)
-  const [itemSelecionado, setItemSelecionado] = useState<ItemCardapio | null>(null)
-  const [opcoesSelecionadas, setOpcoesSelecionadas] = useState<Record<string, boolean | string>>({})
-  const [quantidade, setQuantidade] = useState(1)
-  
-  // Estados para animação
-  const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([])
-  const [cartShake, setCartShake] = useState(false)
-  const [flyingId, setFlyingId] = useState(0)
-  const cartRef = useRef<HTMLDivElement>(null)
-
-  // Hook simplificado do Google Sheets
-  const {
-    loading,
-    error,
-    lastUpdate,
-    isProdutoDisponivel,
-    recarregar
-  } = useDisponibilidadeProdutos();
-
-  // Gerenciamento do carrinho
-  useEffect(() => {
-    const carrinhoSalvo = localStorage.getItem('carrinho')
-    if (carrinhoSalvo) {
-      try {
-        setCarrinho(JSON.parse(carrinhoSalvo))
-      } catch (error) {
-        localStorage.removeItem('carrinho')
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    if (carrinho.length > 0) {
-      localStorage.setItem('carrinho', JSON.stringify(carrinho))
-    } else {
-      localStorage.removeItem('carrinho')
-    }
-  }, [carrinho])
-
-  // Controle do scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollButton(window.scrollY > 300)
-      
-      categoriasRef.current.forEach((ref, index) => {
-        if (ref && cardapio.categorias[index] && window.scrollY >= ref.offsetTop - 120) {
-          setActiveCategory(cardapio.categorias[index].nome.toLowerCase())
-        }
-      })
+  const handleLogin = () => {
+    if (!email || !senha) {
+      setError('Preencha todos os campos');
+      return;
     }
 
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+    setLoading(true);
+    setError('');
 
-  // Função para criar animação de voo
-  const createFlyingAnimation = (item: ItemCardapio, sourceElement: HTMLElement) => {
-    if (!cartRef.current) return
-
-    const sourceRect = sourceElement.getBoundingClientRect()
-    const cartRect = cartRef.current.getBoundingClientRect()
-    
-    const newFlyingId = flyingId + 1
-    setFlyingId(newFlyingId)
-
-    const flyingItem: FlyingItem = {
-      id: newFlyingId,
-      nome: item.nome,
-      imagem: item.imagem,
-      startX: sourceRect.left + sourceRect.width / 2,
-      startY: sourceRect.top + sourceRect.height / 2,
-      endX: cartRect.left + cartRect.width / 2,
-      endY: cartRect.top + cartRect.height / 2
-    }
-
-    setFlyingItems(prev => [...prev, flyingItem])
-
+    // Simulação de autenticação
     setTimeout(() => {
-      setFlyingItems(prev => prev.filter(f => f.id !== newFlyingId))
-      setCartShake(true)
-      setTimeout(() => setCartShake(false), 600)
-    }, 800)
-  }
-
-  const abrirModalOpcoes = (item: ItemCardapio) => {
-    const disponivel = isProdutoDisponivel(item.id);
-    
-    if (!disponivel) {
-      console.log(`[Cardapio] Produto ${item.nome} indisponível - modal não será aberto`);
-      return;
-    }
-    
-    setItemSelecionado(item)
-    setOpcoesSelecionadas({})
-    setQuantidade(1)
-    setModalOpen(true)
-  }
-
-  const adicionarAoCarrinhoSemOpcoes = (item: ItemCardapio, event: React.MouseEvent<HTMLButtonElement>) => {
-    const disponivel = isProdutoDisponivel(item.id);
-    
-    if (!disponivel) {
-      console.log(`[Cardapio] Produto ${item.nome} indisponível - não adicionado ao carrinho`);
-      return;
-    }
-    
-    const novoItem: CarrinhoItem = {
-      id: item.id,
-      nome: item.nome,
-      descricao: item.descricao,
-      preco: item.preco,
-      imagem: item.imagem,
-      quantidade: 1
-    }
-    
-    setCarrinho([...carrinho, novoItem])
-    
-    // Animação de voo
-    const button = event.currentTarget
-    const productCard = button.closest('.product-card') as HTMLElement
-    if (productCard) {
-      createFlyingAnimation(item, productCard)
-    }
-  }
-
-  const adicionarAoCarrinhoComOpcoes = () => {
-    if (!itemSelecionado) return;
-    
-    const disponivel = isProdutoDisponivel(itemSelecionado.id);
-    
-    if (!disponivel) {
-      console.log(`[Cardapio] Produto ${itemSelecionado.nome} indisponível - modal será fechado`);
-      setModalOpen(false);
-      return;
-    }
-    
-    const opcoesFormatadas: string[] = []
-    let precoTotal = itemSelecionado.preco
-
-    if (itemSelecionado.opcoes && Array.isArray(itemSelecionado.opcoes)) {
-      if (typeof itemSelecionado.opcoes[0] === 'string') {
-        if (opcoesSelecionadas.opcao) {
-          opcoesFormatadas.push(opcoesSelecionadas.opcao as string)
-        }
+      if (email === ADMIN_CREDENTIALS.email && senha === ADMIN_CREDENTIALS.senha) {
+        // Login bem-sucedido
+        localStorage.setItem('admin_auth', 'true');
+        localStorage.setItem('admin_user', email);
+        onLoginSuccess();
       } else {
-        (itemSelecionado.opcoes as OpcaoItem[]).forEach(opcao => {
-          if (opcoesSelecionadas[opcao.nome]) {
-            opcoesFormatadas.push(`${opcao.nome}${opcao.preco ? ` (+R$ ${opcao.preco.toFixed(2)})` : ''}`)
-            if (opcao.preco) {
-              precoTotal += opcao.preco
-            }
-          }
-        })
+        setError('Email ou senha incorretos');
       }
+      setLoading(false);
+    }, 1000);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleLogin();
     }
-
-    const novoItem: CarrinhoItem = {
-      id: itemSelecionado.id,
-      nome: itemSelecionado.nome,
-      descricao: itemSelecionado.descricao,
-      preco: precoTotal,
-      imagem: itemSelecionado.imagem,
-      quantidade: quantidade,
-      opcoesSelecionadas: opcoesFormatadas.length > 0 ? opcoesFormatadas : undefined
-    }
-
-    setCarrinho([...carrinho, novoItem])
-    setModalOpen(false)
-    
-    setCartShake(true)
-    setTimeout(() => setCartShake(false), 600)
-  }
-
-  const handleOpcaoSimples = (opcao: string) => {
-    setOpcoesSelecionadas({ opcao })
-  }
-
-  const handleOpcaoComPreco = (nome: string, checked: boolean) => {
-    setOpcoesSelecionadas({
-      ...opcoesSelecionadas,
-      [nome]: checked
-    })
-  }
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-    setMobileMenuOpen(false)
-  }
-
-  const scrollToCategory = (index: number) => {
-    categoriasRef.current[index]?.scrollIntoView({ 
-      behavior: 'smooth',
-      block: 'start'
-    })
-    setMobileMenuOpen(false)
-  }
-
-  const temOpcoes = (item: ItemCardapio): boolean => {
-    return !!item.opcoes && item.opcoes.length > 0
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Flying Items */}
-      {flyingItems.map((flyingItem) => (
-        <div
-          key={flyingItem.id}
-          className="fixed pointer-events-none z-50"
-          style={{
-            left: `${flyingItem.startX}px`,
-            top: `${flyingItem.startY}px`,
-            transform: 'translate(-50%, -50%)',
-            animation: `flyToCart 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`
-          }}
-        >
-          <div className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-green-400">
-            <div className="w-8 h-8 relative">
-              <Image
-                src={flyingItem.imagem}
-                alt={flyingItem.nome}
-                fill
-                className="object-contain rounded"
-                sizes="32px"
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
+            <Settings className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-2">Área Administrativa</h1>
+          <p className="text-gray-400">Digite suas credenciais para acessar</p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-2xl p-8">
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="admin@hamburgueria.com"
+                disabled={loading}
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Senha</label>
+              <div className="relative">
+                <input
+                  type={mostrarSenha ? 'text' : 'password'}
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Digite sua senha"
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarSenha(!mostrarSenha)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  disabled={loading}
+                >
+                  {mostrarSenha ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <span className="text-red-700 text-sm">{error}</span>
+              </div>
+            )}
+
+            <button
+              onClick={handleLogin}
+              disabled={loading}
+              className={`w-full py-3 rounded-lg font-medium transition-all ${
+                loading
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Verificando...
+                </div>
+              ) : (
+                'Entrar no Painel'
+              )}
+            </button>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+            <p className="text-sm text-gray-600">
+              <strong>Credenciais de teste:</strong><br />
+              Email: admin@hamburgueria.com<br />
+              Senha: admin123
+            </p>
           </div>
         </div>
-      ))}
+      </div>
+    </div>
+  );
+}
 
-      <header className="fixed top-0 left-0 right-0 bg-white shadow-md z-20">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center text-gray-800">
-              <Home className="mr-1" size={20} />
-              <span className="hidden sm:inline">Voltar</span>
-            </Link>
-            
-            <h1 className="text-xl font-bold text-gray-800">Hamburgueria</h1>
-            
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={recarregar}
-                disabled={loading}
-                className={`p-2 transition-colors ${
-                  loading 
-                    ? 'text-blue-600 cursor-not-allowed' 
-                    : error 
-                      ? 'text-red-600 hover:text-red-800' 
-                      : 'text-gray-600 hover:text-gray-800'
-                }`}
-                title="Atualizar disponibilidade"
+export default function AdminPage() {
+  const [autenticado, setAutenticado] = useState(false);
+  const [verificandoAuth, setVerificandoAuth] = useState(true);
+  const [usuario, setUsuario] = useState<string>('');
+  
+  // Estados do admin
+  const [produtos, setProdutos] = useState<ProdutoAdmin[]>([]);
+  const [produtosOriginais, setProdutosOriginais] = useState<ProdutoAdmin[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [mudancasPendentes, setMudancasPendentes] = useState(new Set<number>());
+  
+  // Filtros
+  const [filtroCategoria, setFiltroCategoria] = useState<string>('');
+  const [mostrarApenaIndisponiveis, setMostrarApenaIndisponiveis] = useState(false);
+  const [mostrarApenasAlterados, setMostrarApenasAlterados] = useState(false);
+
+  // Verificar autenticação ao carregar
+  useEffect(() => {
+    const verificarAuth = () => {
+      const authStatus = localStorage.getItem('admin_auth');
+      const userEmail = localStorage.getItem('admin_user');
+      
+      if (authStatus === 'true' && userEmail) {
+        setAutenticado(true);
+        setUsuario(userEmail);
+        buscarProdutos();
+      }
+      
+      setVerificandoAuth(false);
+    };
+
+    verificarAuth();
+  }, []);
+
+  const handleLoginSuccess = () => {
+    setAutenticado(true);
+    const userEmail = localStorage.getItem('admin_user');
+    if (userEmail) {
+      setUsuario(userEmail);
+      buscarProdutos();
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('admin_auth');
+    localStorage.removeItem('admin_user');
+    setAutenticado(false);
+    setUsuario('');
+  };
+
+  // Função para buscar produtos da planilha
+  const buscarProdutos = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('[Admin] 🔄 Buscando produtos da planilha...');
+      
+      const possiveisAbas = ['Sheet1', 'Planilha1', 'Página1', 'Aba1'];
+      let dadosEncontrados = null;
+      
+      for (const nomeAba of possiveisAbas) {
+        try {
+          const range = `${nomeAba}!A:D`;
+          const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${GOOGLE_SHEETS_API_KEY}`;
+          
+          const response = await fetch(url);
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.values && data.values.length > 1) {
+              dadosEncontrados = data;
+              console.log(`[Admin] ✅ Dados encontrados na aba: ${nomeAba}`);
+              break;
+            }
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+      
+      if (!dadosEncontrados) {
+        throw new Error('Nenhuma aba com dados válidos encontrada');
+      }
+      
+      const linhas = dadosEncontrados.values.slice(1);
+      const produtosMapeados: ProdutoAdmin[] = linhas
+        .map((linha: string[], index: number) => {
+          const id = parseInt(linha[0] || '0');
+          const nome = (linha[1] || '').trim();
+          const disponivel = parseDisponibilidade(linha[2]);
+          const categoria = (linha[3] || '').trim();
+          
+          if (id > 0 && nome) {
+            return {
+              id,
+              nome,
+              disponivel,
+              categoria,
+              linha: index + 2
+            };
+          }
+          return null;
+        })
+        .filter((produto: ProdutoAdmin | null): produto is ProdutoAdmin => produto !== null);
+      
+      setProdutos(produtosMapeados);
+      setProdutosOriginais(JSON.parse(JSON.stringify(produtosMapeados)));
+      setLastUpdate(new Date());
+      setMudancasPendentes(new Set());
+      
+      console.log(`[Admin] ✅ ${produtosMapeados.length} produtos carregados`);
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(errorMessage);
+      console.error('[Admin] ❌ Erro ao buscar produtos:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleDisponibilidade = (produtoId: number) => {
+    setProdutos(prev => prev.map(produto => {
+      if (produto.id === produtoId) {
+        const novaDisponibilidade = !produto.disponivel;
+        
+        const original = produtosOriginais.find(p => p.id === produtoId);
+        const foiAlterado = original ? original.disponivel !== novaDisponibilidade : true;
+        
+        setMudancasPendentes(prev => {
+          const nova = new Set(prev);
+          if (foiAlterado) {
+            nova.add(produtoId);
+          } else {
+            nova.delete(produtoId);
+          }
+          return nova;
+        });
+        
+        return { ...produto, disponivel: novaDisponibilidade };
+      }
+      return produto;
+    }));
+  };
+
+  const salvarAlteracoes = async () => {
+    if (mudancasPendentes.size === 0) return;
+    
+    setSalvando(true);
+    setError(null);
+    
+    try {
+      console.log('[Admin] 💾 Salvando alterações...');
+      
+      const alteracoes = Array.from(mudancasPendentes).map(id => {
+        const produto = produtos.find(p => p.id === id);
+        return produto ? {
+          id: produto.id,
+          linha: produto.linha,
+          disponivel: produto.disponivel
+        } : null;
+      }).filter(Boolean);
+      
+      // Simular salvamento (substitua pela chamada real da API)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Atualizar estado após sucesso
+      setProdutosOriginais(JSON.parse(JSON.stringify(produtos)));
+      setMudancasPendentes(new Set());
+      setLastUpdate(new Date());
+      
+      console.log('[Admin] ✅ Alterações salvas com sucesso');
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar';
+      setError(errorMessage);
+      console.error('[Admin] ❌ Erro ao salvar:', err);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const descartarAlteracoes = () => {
+    setProdutos(JSON.parse(JSON.stringify(produtosOriginais)));
+    setMudancasPendentes(new Set());
+  };
+
+  const parseDisponibilidade = (valor: string | boolean | number): boolean => {
+    if (!valor) return true;
+    const valorStr = String(valor).toLowerCase().trim();
+    const indisponiveis = ['false', 'não', 'nao', 'no', '0', 'indisponivel', 'indisponível'];
+    return !indisponiveis.includes(valorStr);
+  };
+
+  // Filtros
+  const produtosFiltrados = produtos.filter(produto => {
+    const passaCategoria = !filtroCategoria || produto.categoria.toLowerCase().includes(filtroCategoria.toLowerCase());
+    const passaDisponibilidade = !mostrarApenaIndisponiveis || !produto.disponivel;
+    const passaAlterado = !mostrarApenasAlterados || mudancasPendentes.has(produto.id);
+    return passaCategoria && passaDisponibilidade && passaAlterado;
+  });
+
+  const categorias = [...new Set(produtos.map(p => p.categoria).filter(Boolean))];
+  const totalProdutos = produtos.length;
+  const produtosDisponiveis = produtos.filter(p => p.disponivel).length;
+  const produtosIndisponiveis = totalProdutos - produtosDisponiveis;
+
+  // Loading de verificação
+  if (verificandoAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Tela de login
+  if (!autenticado) {
+    return <LoginSimples onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Painel administrativo (resto do código igual ao original)
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header com logout */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center space-x-4">
+              <Link 
+                href="/cardapio" 
+                className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
               >
-                <RefreshCw 
-                  size={18} 
-                  className={loading ? 'animate-spin' : ''}
-                />
-              </button>
-              
-              <button 
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden text-gray-700 p-2"
-              >
-                <Menu size={24} />
-              </button>
-              
-              <Link href="/pedidos" className="relative p-2 text-gray-700">
-                <div 
-                  ref={cartRef}
-                  className={`transition-transform duration-150 ${
-                    cartShake ? 'animate-bounce' : ''
-                  }`}
-                >
-                  <ShoppingCart 
-                    size={24} 
-                    className={cartShake ? 'text-green-600' : ''}
-                  />
-                  {carrinho.length > 0 && (
-                    <span className={`absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center transition-all duration-300 ${
-                      cartShake ? 'animate-pulse bg-green-500 scale-110' : ''
-                    }`}>
-                      {carrinho.length}
-                    </span>
-                  )}
-                </div>
+                <Home size={20} className="mr-2" />
+                Voltar ao Cardápio
               </Link>
+              <h1 className="text-2xl font-bold text-gray-800">
+                🛠️ Painel Administrativo
+              </h1>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-600">
+                Logado como: <strong>{usuario}</strong>
+              </div>
+              
+              <button
+                onClick={handleLogout}
+                className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                <LogOut size={18} className="mr-2" />
+                Sair
+              </button>
+              
+              {mudancasPendentes.size > 0 && (
+                <>
+                  <button
+                    onClick={descartarAlteracoes}
+                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  >
+                    Descartar
+                  </button>
+                  <button
+                    onClick={salvarAlteracoes}
+                    disabled={salvando}
+                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+                  >
+                    {salvando ? (
+                      <Loader size={18} className="mr-2 animate-spin" />
+                    ) : (
+                      <Save size={18} className="mr-2" />
+                    )}
+                    Salvar {mudancasPendentes.size} Alteraç{mudancasPendentes.size > 1 ? 'ões' : 'ão'}
+                  </button>
+                </>
+              )}
+              
+              <button
+                onClick={buscarProdutos}
+                disabled={loading}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                <RefreshCw size={18} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </button>
             </div>
           </div>
           
-          {/* Navegação e Status */}
-          <div className="flex justify-between items-center py-2 border-t">
-            <nav className="hidden md:flex justify-center flex-1">
-              <div className="flex space-x-1">
-                {cardapio.categorias.map((categoria, index) => (
-                  <button
-                    key={categoria.nome}
-                    onClick={() => scrollToCategory(index)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      activeCategory === categoria.nome.toLowerCase() 
-                        ? 'bg-gray-800 text-white' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    {categoria.nome}
-                  </button>
-                ))}
-              </div>
-            </nav>
-            
-            {/* Status simplificado */}
-            <div className="flex items-center text-xs text-gray-500 space-x-3">
+          {/* Status */}
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center space-x-4">
               <div className="flex items-center">
                 {error ? (
                   <WifiOff size={14} className="text-red-500 mr-1" />
@@ -658,333 +454,232 @@ export default function Cardapio() {
                   <Wifi size={14} className="text-green-500 mr-1" />
                 )}
                 <span className={error ? 'text-red-500' : 'text-green-600'}>
-                  {error ? 'Erro de Conexão' : 'Conectado'}
+                  {error ? 'Erro' : 'Conectado'}
                 </span>
               </div>
 
-              <div className="flex items-center">
-                <div className={`w-2 h-2 rounded-full mr-2 ${
-                  loading ? 'bg-yellow-400 animate-pulse' : error ? 'bg-red-400' : 'bg-green-400'
-                }`} />
-                {loading ? 'Carregando...' : 
-                  error ? 'Usando cache' :
-                  lastUpdate ? `Atualizado ${lastUpdate.toLocaleTimeString()}` : 'Pronto'
-                }
-              </div>
+              {mudancasPendentes.size > 0 && (
+                <div className="flex items-center text-orange-600">
+                  <AlertCircle size={14} className="mr-1" />
+                  {mudancasPendentes.size} não salva{mudancasPendentes.size > 1 ? 's' : ''}
+                </div>
+              )}
             </div>
-          </div>
-        </div>
-      </header>
 
-      {/* Menu mobile */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-30 md:hidden">
-          <div 
-            className="absolute inset-0 bg-black bg-opacity-50"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          
-          <div className="absolute left-0 top-0 bottom-0 w-64 bg-white shadow-lg">
-            <div className="p-4 border-b">
-              <h2 className="text-lg font-semibold">Menu</h2>
-            </div>
-            
-            <nav className="p-2">
-              {cardapio.categorias.map((categoria, index) => (
-                <button
-                  key={categoria.nome}
-                  onClick={() => scrollToCategory(index)}
-                  className={`w-full text-left px-4 py-3 rounded-md text-sm font-medium mb-1 ${
-                    activeCategory === categoria.nome.toLowerCase() 
-                      ? 'bg-gray-100 text-gray-900' 
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {categoria.nome}
-                </button>
-              ))}
-            </nav>
-          </div>
-        </div>
-      )}
-
-      <main className="pt-32 pb-12 container mx-auto px-4">
-        {cardapio.categorias.map((categoria, index) => (
-          <section 
-            key={categoria.nome}
-            ref={el => {
-              if (el) {
-                categoriasRef.current[index] = el
-              }
-            }}
-            className="mb-16"
-            id={categoria.nome.toLowerCase()}
-          >
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 pb-2 border-b">
-              {categoria.nome}
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {categoria.itens.map(item => {
-                // FOCO: Verificar disponibilidade diretamente da planilha
-                const disponivel = isProdutoDisponivel(item.id);
-                
-                console.log(`[Cardapio] Renderizando ${item.nome} (ID: ${item.id}) - Disponível: ${disponivel}`);
-                
-                return (
-                  <div 
-                    key={item.id} 
-                    className={`product-card bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 transition-all duration-300 flex flex-col h-full ${
-                      disponivel 
-                        ? 'hover:shadow-lg cursor-pointer' 
-                        : 'cursor-not-allowed'
-                    }`}
-                  >
-                    <div className="relative h-48 overflow-hidden group">
-                      <Image
-                        src={item.imagem}
-                        alt={item.nome}
-                        fill
-                        className={`object-contain object-center transition-all duration-300 ease-in-out transform p-2 ${
-                          disponivel 
-                            ? 'group-hover:scale-110 group-hover:blur-sm' 
-                            : ''
-                        }`}
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        priority={index === 0}
-                      />
-                      
-                      {/* Mensagem sutil de esgotado */}
-                      {!disponivel && (
-                        <div className="absolute top-3 right-3 z-30">
-                          <span className="text-white font-semibold text-xs bg-red-500 px-2 py-1 rounded-md shadow-md">
-                            Esgotado
-                          </span>
-                        </div>
-                      )}
-                      
-                      {disponivel && (
-                        <>
-                          <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-30 transition-opacity duration-300 z-10"></div>
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-                            <span className="text-white font-bold text-lg shadow-lg">{item.nome}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    
-                    <div className="p-4 flex flex-col flex-grow">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-lg font-semibold text-gray-800">{item.nome}</h3>
-                        <span className="text-lg font-bold text-gray-900">
-                          R$ {item.preco.toFixed(2)}
-                        </span>
-                      </div>
-                      
-                      <p className="text-gray-600 mb-4 text-sm flex-grow">{item.descricao}</p>
-                      
-                      {temOpcoes(item) && (
-                        <div className="mb-3 text-xs text-gray-500">
-                          {Array.isArray(item.opcoes) && typeof item.opcoes[0] === 'object' 
-                            ? `Opções: ${(item.opcoes as OpcaoItem[]).map(opt => opt.nome).join(', ')}`
-                            : `Opções: ${(item.opcoes as string[]).join(', ')}`
-                          }
-                        </div>
-                      )}
-                      
-                      <button
-                        onClick={(e) => {
-                          if (disponivel) {
-                            if (temOpcoes(item)) {
-                              abrirModalOpcoes(item);
-                            } else {
-                              adicionarAoCarrinhoSemOpcoes(item, e);
-                            }
-                          }
-                        }}
-                        disabled={!disponivel}
-                        className={`w-full py-2 rounded text-sm font-medium transition-all duration-200 mt-auto ${
-                          disponivel
-                            ? 'bg-gray-800 text-white hover:bg-gray-700 transform hover:scale-105 active:scale-95'
-                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        }`}
-                      >
-                        {!disponivel 
-                          ? "ESGOTADO"
-                          : temOpcoes(item) 
-                            ? "Selecionar Opções" 
-                            : "Adicionar ao Carrinho"
-                        }
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        ))}
-      </main>
-
-      {/* Modal simplificado */}
-      {modalOpen && itemSelecionado && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">{itemSelecionado.nome}</h3>
-              <button 
-                onClick={() => setModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-            
-            {/* Verificação simples de disponibilidade */}
-            {!isProdutoDisponivel(itemSelecionado.id) && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-center">
-                <span className="text-red-700 font-medium">
-                  Este produto está esgotado
-                </span>
-              </div>
-            )}
-            
-            <div className="mb-4">
-              <p className="text-gray-600 mb-2">{itemSelecionado.descricao}</p>
-              <p className="font-bold">R$ {itemSelecionado.preco.toFixed(2)}</p>
-            </div>
-            
-            {itemSelecionado.opcoes && itemSelecionado.opcoes.length > 0 && (
-              <div className="mb-6">
-                <h4 className="font-semibold mb-2">
-                  {Array.isArray(itemSelecionado.opcoes) && typeof itemSelecionado.opcoes[0] === 'object' 
-                    ? "Adicionais" 
-                    : "Opções"
+            <div className="flex items-center text-gray-600">
+              {error ? (
+                <span className="text-red-600">{error}</span>
+              ) : (
+                <span>
+                  {loading ? 'Carregando...' : 
+                    lastUpdate ? `Última atualização: ${lastUpdate.toLocaleTimeString()}` : 'Pronto'
                   }
-                </h4>
-                
-                {Array.isArray(itemSelecionado.opcoes) && typeof itemSelecionado.opcoes[0] === 'string' && (
-                  <div className="space-y-2">
-                    {(itemSelecionado.opcoes as string[]).map((opcao, i) => (
-                      <div key={i} className="flex items-center">
-                        <input 
-                          type="radio"
-                          id={`opcao-${i}`}
-                          name="opcao"
-                          value={opcao}
-                          checked={opcoesSelecionadas.opcao === opcao}
-                          onChange={() => handleOpcaoSimples(opcao)}
-                          className="mr-2"
-                        />
-                        <label htmlFor={`opcao-${i}`} className="text-gray-700">{opcao}</label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {Array.isArray(itemSelecionado.opcoes) && typeof itemSelecionado.opcoes[0] === 'object' && (
-                  <div className="space-y-2">
-                    {(itemSelecionado.opcoes as OpcaoItem[]).map((opcao, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <input 
-                            type="checkbox"
-                            id={`opcao-${i}`}
-                            checked={!!opcoesSelecionadas[opcao.nome]}
-                            onChange={(e) => handleOpcaoComPreco(opcao.nome, e.target.checked)}
-                            className="mr-2"
-                          />
-                          <label htmlFor={`opcao-${i}`} className="text-gray-700">{opcao.nome}</label>
-                        </div>
-                        {opcao.preco && (
-                          <span className="text-gray-600">+ R$ {opcao.preco.toFixed(2)}</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            
-            <div className="mb-6">
-              <h4 className="font-semibold mb-2">Quantidade</h4>
-              <div className="flex items-center border rounded-md w-32">
-                <button 
-                  className="px-3 py-1 text-gray-600 hover:bg-gray-100"
-                  onClick={() => quantidade > 1 && setQuantidade(quantidade - 1)}
-                >
-                  -
-                </button>
-                <span className="flex-1 text-center">{quantidade}</span>
-                <button 
-                  className="px-3 py-1 text-gray-600 hover:bg-gray-100"
-                  onClick={() => setQuantidade(quantidade + 1)}
-                >
-                  +
-                </button>
-              </div>
+                </span>
+              )}
             </div>
-            
-            <button
-              onClick={adicionarAoCarrinhoComOpcoes}
-              disabled={!isProdutoDisponivel(itemSelecionado.id)}
-              className={`w-full py-3 rounded-lg transition-all duration-200 ${
-                isProdutoDisponivel(itemSelecionado.id)
-                  ? 'bg-gray-800 text-white hover:bg-gray-700'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              {isProdutoDisponivel(itemSelecionado.id) 
-                ? "Adicionar ao Carrinho" 
-                : "Produto Esgotado"
-              }
-            </button>
           </div>
         </div>
-      )}
 
-      {showScrollButton && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-6 right-6 bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition-colors z-10"
-          aria-label="Voltar ao topo"
-        >
-          <ChevronUp size={24} />
-        </button>
-      )}
+        {/* Estatísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Settings className="text-blue-600" size={24} />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-sm font-medium text-gray-600">Total</h3>
+                <p className="text-2xl font-bold text-blue-600">{totalProdutos}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle className="text-green-600" size={24} />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-sm font-medium text-gray-600">Disponíveis</h3>
+                <p className="text-2xl font-bold text-green-600">{produtosDisponiveis}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <XCircle className="text-red-600" size={24} />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-sm font-medium text-gray-600">Esgotados</h3>
+                <p className="text-2xl font-bold text-red-600">{produtosIndisponiveis}</p>
+              </div>
+            </div>
+          </div>
 
-      <style jsx>{`
-        @keyframes flyToCart {
-          0% {
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 1;
-          }
-          50% {
-            transform: translate(
-              calc(${flyingItems[0]?.endX || 0}px - ${flyingItems[0]?.startX || 0}px - 50%), 
-              calc(${flyingItems[0]?.endY || 0}px - ${flyingItems[0]?.startY || 0}px - 150px)
-            ) scale(0.8);
-            opacity: 0.8;
-          }
-          100% {
-            transform: translate(
-              calc(${flyingItems[0]?.endX || 0}px - ${flyingItems[0]?.startX || 0}px - 50%), 
-              calc(${flyingItems[0]?.endY || 0}px - ${flyingItems[0]?.startY || 0}px - 50%)
-            ) scale(0.3);
-            opacity: 0;
-          }
-        }
-        
-        .animate-bounce {
-          animation: cartBounce 0.6s ease-in-out;
-        }
-        
-        @keyframes cartBounce {
-          0%, 100% { transform: translateY(0); }
-          25% { transform: translateY(-8px) rotate(-5deg); }
-          50% { transform: translateY(0) rotate(5deg); }
-          75% { transform: translateY(-4px) rotate(-2deg); }
-        }
-      `}</style>
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <AlertCircle className="text-orange-600" size={24} />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-sm font-medium text-gray-600">Alterações</h3>
+                <p className="text-2xl font-bold text-orange-600">{mudancasPendentes.size}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filtros */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">🔍 Filtros</h2>
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-48">
+              <select
+                value={filtroCategoria}
+                onChange={(e) => setFiltroCategoria(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Todas as categorias</option>
+                {categorias.map(categoria => (
+                  <option key={categoria} value={categoria}>{categoria}</option>
+                ))}
+              </select>
+            </div>
+            
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={mostrarApenaIndisponiveis}
+                onChange={(e) => setMostrarApenaIndisponiveis(e.target.checked)}
+                className="mr-2"
+              />
+              <span className="text-sm">Apenas esgotados</span>
+            </label>
+
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={mostrarApenasAlterados}
+                onChange={(e) => setMostrarApenasAlterados(e.target.checked)}
+                className="mr-2"
+              />
+              <span className="text-sm">Apenas alterados</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Lista de Produtos */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-800">
+              📦 Produtos ({produtosFiltrados.length})
+            </h2>
+          </div>
+          
+          {loading ? (
+            <div className="p-8 text-center">
+              <RefreshCw className="animate-spin mx-auto mb-4 text-blue-600" size={32} />
+              <p className="text-gray-600">Carregando produtos...</p>
+            </div>
+          ) : produtosFiltrados.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <p>Nenhum produto encontrado com os filtros aplicados.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produto</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ação</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {produtosFiltrados.map((produto) => {
+                    const foiAlterado = mudancasPendentes.has(produto.id);
+                    
+                    return (
+                      <tr key={produto.id} className={`hover:bg-gray-50 ${foiAlterado ? 'bg-orange-50 border-l-4 border-orange-400' : ''}`}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          #{produto.id}
+                          {foiAlterado && <span className="ml-2 text-orange-600">●</span>}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          <div>
+                            <div className="font-medium">{produto.nome}</div>
+                            <div className="text-xs text-gray-500">Linha {produto.linha}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {produto.categoria}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            produto.disponivel 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {produto.disponivel ? (
+                              <>
+                                <CheckCircle size={12} className="mr-1" />
+                                Disponível
+                              </>
+                            ) : (
+                              <>
+                                <XCircle size={12} className="mr-1" />
+                                Esgotado
+                              </>
+                            )}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <button
+                            onClick={() => toggleDisponibilidade(produto.id)}
+                            className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                              produto.disponivel
+                                ? 'bg-red-100 text-red-700 hover:bg-red-200 hover:scale-105'
+                                : 'bg-green-100 text-green-700 hover:bg-green-200 hover:scale-105'
+                            }`}
+                          >
+                            {produto.disponivel ? (
+                              <>
+                                <EyeOff size={14} className="mr-1" />
+                                Esgotar
+                              </>
+                            ) : (
+                              <>
+                                <Eye size={14} className="mr-1" />
+                                Disponibilizar
+                              </>
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Instruções */}
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-blue-800 mb-2">📋 Instruções:</h3>
+          <div className="text-sm text-blue-700 space-y-1">
+            <p>1. <strong>Altere a disponibilidade</strong> clicando nos botões "Esgotar" ou "Disponibilizar"</p>
+            <p>2. <strong>Produtos alterados</strong> ficam destacados em laranja</p>
+            <p>3. <strong>Clique em "Salvar"</strong> para aplicar as mudanças na planilha Google Sheets</p>
+            <p>4. <strong>Use os filtros</strong> para encontrar produtos específicos</p>
+            <p>5. <strong>Credenciais de teste:</strong> admin@hamburgueria.com / admin123</p>
+          </div>
+        </div>
+      </div>
     </div>
-  )
+  );
 }

@@ -1,11 +1,11 @@
-// app/admin/page.tsx
+// app/admin/page.tsx - Versão Simplificada
 'use client'
 
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, CheckCircle, XCircle, AlertCircle, Eye, EyeOff, Settings, Save, Loader, Wifi, WifiOff, Home, LogOut } from 'lucide-react';
 import Link from 'next/link';
 
-// Interface para os produtos
+// Interfaces
 interface ProdutoAdmin {
   id: number;
   nome: string;
@@ -14,25 +14,25 @@ interface ProdutoAdmin {
   linha: number;
 }
 
-// Interface para o usuário
-interface Usuario {
-  email: string;
-  role: string;
-}
-
 // Configuração
 const GOOGLE_SHEETS_API_KEY = 'AIzaSyA09Jv2bQ8DcdqtbL4Zje5WM2YAGJFI8S8';
 const SPREADSHEET_ID = '1PB83VB1tQj2mNTiEsk-FIOIDxjPsDDck-3LpeKjm9Q4';
 
+// Credenciais simples (em produção, use variáveis de ambiente)
+const ADMIN_CREDENTIALS = {
+  email: 'admin@hamburgueria.com',
+  senha: 'admin123'
+};
+
 // Componente de Login Simplificado
-function LoginSeguro({ onLoginSuccess }: { onLoginSuccess: () => void }) {
+function LoginSimples({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
-  const handleLogin = async () => {
+  const handleLogin = () => {
     if (!email || !senha) {
       setError('Preencha todos os campos');
       return;
@@ -41,27 +41,18 @@ function LoginSeguro({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     setLoading(true);
     setError('');
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('admin_token', data.token);
+    // Simulação de autenticação
+    setTimeout(() => {
+      if (email === ADMIN_CREDENTIALS.email && senha === ADMIN_CREDENTIALS.senha) {
+        // Login bem-sucedido
+        localStorage.setItem('admin_auth', 'true');
+        localStorage.setItem('admin_user', email);
         onLoginSuccess();
       } else {
-        setError(data.error || 'Credenciais inválidas');
+        setError('Email ou senha incorretos');
       }
-    } catch (err) {
-      setError('Erro de conexão. Tente novamente.');
-      console.error('[Login] Erro:', err);
-    } finally {
       setLoading(false);
-    }
+    }, 1000);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -91,7 +82,7 @@ function LoginSeguro({ onLoginSuccess }: { onLoginSuccess: () => void }) {
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyPress={handleKeyPress}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="admin@exemplo.com"
+                placeholder="admin@hamburgueria.com"
                 disabled={loading}
               />
             </div>
@@ -147,10 +138,10 @@ function LoginSeguro({ onLoginSuccess }: { onLoginSuccess: () => void }) {
 
           <div className="mt-6 pt-6 border-t border-gray-200 text-center">
             <p className="text-sm text-gray-600">
-              <strong>Credenciais padrão:</strong><br />
+             <strong>Credenciais de teste:</strong><br />
               Email: admin@hamburgueria.com<br />
               Senha: admin123
-            </p>
+            </p>*/
           </div>
         </div>
       </div>
@@ -161,7 +152,7 @@ function LoginSeguro({ onLoginSuccess }: { onLoginSuccess: () => void }) {
 export default function AdminPage() {
   const [autenticado, setAutenticado] = useState(false);
   const [verificandoAuth, setVerificandoAuth] = useState(true);
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [usuario, setUsuario] = useState<string>('');
   
   // Estados do admin
   const [produtos, setProdutos] = useState<ProdutoAdmin[]>([]);
@@ -179,74 +170,36 @@ export default function AdminPage() {
 
   // Verificar autenticação ao carregar
   useEffect(() => {
-    const verificarAuth = async () => {
-      try {
-        const token = localStorage.getItem('admin_token');
-        if (!token) {
-          setVerificandoAuth(false);
-          return;
-        }
-
-        const response = await fetch('/api/auth/verificar', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setUsuario(data.user);
-          setAutenticado(true);
-          buscarProdutos(); // Carregar produtos após autenticação
-        } else {
-          localStorage.removeItem('admin_token');
-        }
-      } catch (err) {
-        localStorage.removeItem('admin_token');
-        console.error('[Auth] Erro na verificação:', err);
-      } finally {
-        setVerificandoAuth(false);
+    const verificarAuth = () => {
+      const authStatus = localStorage.getItem('admin_auth');
+      const userEmail = localStorage.getItem('admin_user');
+      
+      if (authStatus === 'true' && userEmail) {
+        setAutenticado(true);
+        setUsuario(userEmail);
+        buscarProdutos();
       }
+      
+      setVerificandoAuth(false);
     };
 
     verificarAuth();
-  }, []); // Sem dependências externas
-
-  const verificarAutenticacao = async () => {
-    try {
-      const token = localStorage.getItem('admin_token');
-      if (!token) {
-        setVerificandoAuth(false);
-        return;
-      }
-
-      const response = await fetch('/api/auth/verificar', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUsuario(data.user);
-        setAutenticado(true);
-        buscarProdutos(); // Carregar produtos após autenticação
-      } else {
-        localStorage.removeItem('admin_token');
-      }
-    } catch (err) {
-      localStorage.removeItem('admin_token');
-      console.error('[Auth] Erro na verificação:', err);
-    } finally {
-      setVerificandoAuth(false);
-    }
-  };
+  }, []);
 
   const handleLoginSuccess = () => {
     setAutenticado(true);
-    verificarAutenticacao();
+    const userEmail = localStorage.getItem('admin_user');
+    if (userEmail) {
+      setUsuario(userEmail);
+      buscarProdutos();
+    }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_auth');
+    localStorage.removeItem('admin_user');
     setAutenticado(false);
-    setUsuario(null);
+    setUsuario('');
   };
 
   // Função para buscar produtos da planilha
@@ -257,7 +210,6 @@ export default function AdminPage() {
       
       console.log('[Admin] 🔄 Buscando produtos da planilha...');
       
-      // Tentar diferentes nomes de aba
       const possiveisAbas = ['Sheet1', 'Planilha1', 'Página1', 'Aba1'];
       let dadosEncontrados = null;
       
@@ -277,8 +229,6 @@ export default function AdminPage() {
             }
           }
         } catch (err) {
-          // Continuar tentando outras abas
-          console.log(`Tentativa na aba ${nomeAba} falhou:`, err);
           continue;
         }
       }
@@ -287,8 +237,7 @@ export default function AdminPage() {
         throw new Error('Nenhuma aba com dados válidos encontrada');
       }
       
-      // Processar dados
-      const linhas = dadosEncontrados.values.slice(1); // Pular cabeçalho
+      const linhas = dadosEncontrados.values.slice(1);
       const produtosMapeados: ProdutoAdmin[] = linhas
         .map((linha: string[], index: number) => {
           const id = parseInt(linha[0] || '0');
@@ -302,7 +251,7 @@ export default function AdminPage() {
               nome,
               disponivel,
               categoria,
-              linha: index + 2 // +2 porque pulamos cabeçalho e índice começa em 0
+              linha: index + 2
             };
           }
           return null;
@@ -310,7 +259,7 @@ export default function AdminPage() {
         .filter((produto: ProdutoAdmin | null): produto is ProdutoAdmin => produto !== null);
       
       setProdutos(produtosMapeados);
-      setProdutosOriginais(JSON.parse(JSON.stringify(produtosMapeados))); // Deep copy
+      setProdutosOriginais(JSON.parse(JSON.stringify(produtosMapeados)));
       setLastUpdate(new Date());
       setMudancasPendentes(new Set());
       
@@ -325,17 +274,14 @@ export default function AdminPage() {
     }
   };
 
-  // Função para alternar disponibilidade local
   const toggleDisponibilidade = (produtoId: number) => {
     setProdutos(prev => prev.map(produto => {
       if (produto.id === produtoId) {
         const novaDisponibilidade = !produto.disponivel;
         
-        // Verificar se é diferente do original
         const original = produtosOriginais.find(p => p.id === produtoId);
         const foiAlterado = original ? original.disponivel !== novaDisponibilidade : true;
         
-        // Atualizar mudanças pendentes
         setMudancasPendentes(prev => {
           const nova = new Set(prev);
           if (foiAlterado) {
@@ -352,7 +298,6 @@ export default function AdminPage() {
     }));
   };
 
-  // Função para salvar alterações na planilha
   const salvarAlteracoes = async () => {
     if (mudancasPendentes.size === 0) return;
     
@@ -362,7 +307,6 @@ export default function AdminPage() {
     try {
       console.log('[Admin] 💾 Salvando alterações...');
       
-      // Preparar dados para enviar para API route
       const alteracoes = Array.from(mudancasPendentes).map(id => {
         const produto = produtos.find(p => p.id === id);
         return produto ? {
@@ -372,7 +316,7 @@ export default function AdminPage() {
         } : null;
       }).filter(Boolean);
       
-      // Chamar API route para salvar
+      // Usar SUA API existente - não precisa mudar nada!
       const response = await fetch('/api/admin/salvar-disponibilidade', {
         method: 'POST',
         headers: {
@@ -406,13 +350,11 @@ export default function AdminPage() {
     }
   };
 
-  // Função para descartar alterações
   const descartarAlteracoes = () => {
     setProdutos(JSON.parse(JSON.stringify(produtosOriginais)));
     setMudancasPendentes(new Set());
   };
 
-  // Função auxiliar para parsing
   const parseDisponibilidade = (valor: string | boolean | number): boolean => {
     if (!valor) return true;
     const valorStr = String(valor).toLowerCase().trim();
@@ -447,10 +389,10 @@ export default function AdminPage() {
 
   // Tela de login
   if (!autenticado) {
-    return <LoginSeguro onLoginSuccess={handleLoginSuccess} />;
+    return <LoginSimples onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // Painel administrativo (autenticado)
+  // Painel administrativo (resto do código igual ao original)
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -471,11 +413,9 @@ export default function AdminPage() {
             </div>
             
             <div className="flex items-center space-x-4">
-              {usuario && (
-                <div className="text-sm text-gray-600">
-                  Logado como: <strong>{usuario.email}</strong>
-                </div>
-              )}
+              <div className="text-sm text-gray-600">
+                Logado como: <strong>{usuario}</strong>
+              </div>
               
               <button
                 onClick={handleLogout}
@@ -747,11 +687,11 @@ export default function AdminPage() {
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h3 className="text-sm font-medium text-blue-800 mb-2">📋 Instruções:</h3>
           <div className="text-sm text-blue-700 space-y-1">
-            <p>1. <strong>Altere a disponibilidade</strong> clicando nos botões &quot;Esgotar&quot; ou &quot;Disponibilizar&quot;</p>
+            <p>1. <strong>Altere a disponibilidade</strong> clicando nos botões "Esgotar" ou "Disponibilizar"</p>
             <p>2. <strong>Produtos alterados</strong> ficam destacados em laranja</p>
-            <p>3. <strong>Clique em &quot;Salvar&quot;</strong> para aplicar as mudanças na planilha Google Sheets</p>
+            <p>3. <strong>Clique em "Salvar"</strong> para aplicar as mudanças na planilha Google Sheets</p>
             <p>4. <strong>Use os filtros</strong> para encontrar produtos específicos</p>
-            <p>5. <strong>Sua sessão expira</strong> em 24 horas por segurança</p>
+            <p>5. <strong>Credenciais de teste:</strong> admin@hamburgueria.com / admin123</p>
           </div>
         </div>
       </div>
