@@ -2,7 +2,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, CheckCircle, XCircle, AlertCircle, Eye, EyeOff, Settings, Save, Loader, Wifi, WifiOff, Home } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, AlertCircle, Eye, EyeOff, Settings, Save, Loader, Wifi, WifiOff, Home, LogOut } from 'lucide-react';
 import Link from 'next/link';
 
 // Interface para os produtos
@@ -11,14 +11,158 @@ interface ProdutoAdmin {
   nome: string;
   disponivel: boolean;
   categoria: string;
-  linha: number; // Linha na planilha para atualização
+  linha: number;
+}
+
+// Interface para o usuário
+interface Usuario {
+  email: string;
+  role: string;
 }
 
 // Configuração
 const GOOGLE_SHEETS_API_KEY = 'AIzaSyA09Jv2bQ8DcdqtbL4Zje5WM2YAGJFI8S8';
 const SPREADSHEET_ID = '1PB83VB1tQj2mNTiEsk-FIOIDxjPsDDck-3LpeKjm9Q4';
 
+// Componente de Login Simplificado
+function LoginSeguro({ onLoginSuccess }: { onLoginSuccess: () => void }) {
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !senha) {
+      setError('Preencha todos os campos');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('admin_token', data.token);
+        onLoginSuccess();
+      } else {
+        setError(data.error || 'Credenciais inválidas');
+      }
+    } catch (err) {
+      setError('Erro de conexão. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleLogin();
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
+            <Settings className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-2">Área Administrativa</h1>
+          <p className="text-gray-400">Digite suas credenciais para acessar</p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-2xl p-8">
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="admin@exemplo.com"
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Senha</label>
+              <div className="relative">
+                <input
+                  type={mostrarSenha ? 'text' : 'password'}
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Digite sua senha"
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarSenha(!mostrarSenha)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  disabled={loading}
+                >
+                  {mostrarSenha ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <span className="text-red-700 text-sm">{error}</span>
+              </div>
+            )}
+
+            <button
+              onClick={handleLogin}
+              disabled={loading}
+              className={`w-full py-3 rounded-lg font-medium transition-all ${
+                loading
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Verificando...
+                </div>
+              ) : (
+                'Entrar no Painel'
+              )}
+            </button>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+            <p className="text-sm text-gray-600">
+              <strong>Credenciais padrão:</strong><br />
+              Email: admin@hamburgueria.com<br />
+              Senha: admin123
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPage() {
+  const [autenticado, setAutenticado] = useState(false);
+  const [verificandoAuth, setVerificandoAuth] = useState(true);
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
+  
+  // Estados do admin
   const [produtos, setProdutos] = useState<ProdutoAdmin[]>([]);
   const [produtosOriginais, setProdutosOriginais] = useState<ProdutoAdmin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +176,49 @@ export default function AdminPage() {
   const [mostrarApenaIndisponiveis, setMostrarApenaIndisponiveis] = useState(false);
   const [mostrarApenasAlterados, setMostrarApenasAlterados] = useState(false);
 
+  // Verificar autenticação ao carregar
+  useEffect(() => {
+    verificarAutenticacao();
+  }, []); // Removido buscarProdutos da dependência pois é chamado dentro de verificarAutenticacao
+
+  const verificarAutenticacao = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        setVerificandoAuth(false);
+        return;
+      }
+
+      const response = await fetch('/api/auth/verificar', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUsuario(data.user);
+        setAutenticado(true);
+        buscarProdutos(); // Carregar produtos após autenticação
+      } else {
+        localStorage.removeItem('admin_token');
+      }
+    } catch (err) {
+      localStorage.removeItem('admin_token');
+    } finally {
+      setVerificandoAuth(false);
+    }
+  };
+
+  const handleLoginSuccess = () => {
+    setAutenticado(true);
+    verificarAutenticacao();
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('admin_token');
+    setAutenticado(false);
+    setUsuario(null);
+  };
+
   // Função para buscar produtos da planilha
   const buscarProdutos = async () => {
     try {
@@ -43,7 +230,6 @@ export default function AdminPage() {
       // Tentar diferentes nomes de aba
       const possiveisAbas = ['Sheet1', 'Planilha1', 'Página1', 'Aba1'];
       let dadosEncontrados = null;
-      let abaEncontrada = '';
       
       for (const nomeAba of possiveisAbas) {
         try {
@@ -56,12 +242,13 @@ export default function AdminPage() {
             const data = await response.json();
             if (data.values && data.values.length > 1) {
               dadosEncontrados = data;
-              abaEncontrada = nomeAba;
               console.log(`[Admin] ✅ Dados encontrados na aba: ${nomeAba}`);
               break;
             }
           }
-        } catch (error) {
+        } catch (err) {
+          // Continuar tentando outras abas
+          console.log(`Tentativa na aba ${nomeAba} falhou:`, err);
           continue;
         }
       }
@@ -196,7 +383,7 @@ export default function AdminPage() {
   };
 
   // Função auxiliar para parsing
-  const parseDisponibilidade = (valor: any): boolean => {
+  const parseDisponibilidade = (valor: string | boolean | number): boolean => {
     if (!valor) return true;
     const valorStr = String(valor).toLowerCase().trim();
     const indisponiveis = ['false', 'não', 'nao', 'no', '0', 'indisponivel', 'indisponível'];
@@ -216,14 +403,28 @@ export default function AdminPage() {
   const produtosDisponiveis = produtos.filter(p => p.disponivel).length;
   const produtosIndisponiveis = totalProdutos - produtosDisponiveis;
 
-  useEffect(() => {
-    buscarProdutos();
-  }, []);
+  // Loading de verificação
+  if (verificandoAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
 
+  // Tela de login
+  if (!autenticado) {
+    return <LoginSeguro onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Painel administrativo (autenticado)
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        {/* Header com logout */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center space-x-4">
@@ -235,10 +436,25 @@ export default function AdminPage() {
                 Voltar ao Cardápio
               </Link>
               <h1 className="text-2xl font-bold text-gray-800">
-                🛠️ Painel Administrativo - Disponibilidade
+                🛠️ Painel Administrativo
               </h1>
             </div>
-            <div className="flex items-center space-x-3">
+            
+            <div className="flex items-center space-x-4">
+              {usuario && (
+                <div className="text-sm text-gray-600">
+                  Logado como: <strong>{usuario.email}</strong>
+                </div>
+              )}
+              
+              <button
+                onClick={handleLogout}
+                className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                <LogOut size={18} className="mr-2" />
+                Sair
+              </button>
+              
               {mudancasPendentes.size > 0 && (
                 <>
                   <button
@@ -501,10 +717,11 @@ export default function AdminPage() {
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h3 className="text-sm font-medium text-blue-800 mb-2">📋 Instruções:</h3>
           <div className="text-sm text-blue-700 space-y-1">
-            <p>1. <strong>Altere a disponibilidade</strong> clicando nos botões "Esgotar" ou "Disponibilizar"</p>
+            <p>1. <strong>Altere a disponibilidade</strong> clicando nos botões &quot;Esgotar&quot; ou &quot;Disponibilizar&quot;</p>
             <p>2. <strong>Produtos alterados</strong> ficam destacados em laranja</p>
-            <p>3. <strong>Clique em "Salvar"</strong> para aplicar as mudanças na planilha Google Sheets</p>
+            <p>3. <strong>Clique em &quot;Salvar&quot;</strong> para aplicar as mudanças na planilha Google Sheets</p>
             <p>4. <strong>Use os filtros</strong> para encontrar produtos específicos</p>
+            <p>5. <strong>Sua sessão expira</strong> em 24 horas por segurança</p>
           </div>
         </div>
       </div>

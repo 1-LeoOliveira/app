@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Home, ChevronUp, ShoppingCart, Menu, RefreshCw, AlertCircle, Wifi, WifiOff } from 'lucide-react'
+import { Home, ChevronUp, ShoppingCart, Menu, RefreshCw, Wifi, WifiOff } from 'lucide-react'
 import { useDisponibilidadeProdutos } from '../../utils/googleSheets'
 
 // Dados do cardápio (mantido local para estrutura e preços)
