@@ -307,7 +307,7 @@ export default function AdminPage() {
           }
           return null;
         })
-        .filter((produto): produto is ProdutoAdmin => produto !== null);
+        .filter((produto: ProdutoAdmin | null): produto is ProdutoAdmin => produto !== null);
       
       setProdutos(produtosMapeados);
       setProdutosOriginais(JSON.parse(JSON.stringify(produtosMapeados))); // Deep copy

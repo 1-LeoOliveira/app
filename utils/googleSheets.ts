@@ -1,4 +1,4 @@
-// utils/googleSheets.ts - Versão com Fallback Local
+// utils/googleSheets.ts - Versão com Fallback Local e TypeScript Corrigido
 import { useState, useEffect, useCallback } from 'react';
 
 export interface ProdutoDisponibilidade {
@@ -131,12 +131,12 @@ async function buscarDadosDaPlanilha(): Promise<ProdutoDisponibilidade[]> {
           console.log(`[GoogleSheets] ✅ Produto válido: ID=${id}, Nome=${nome}, Disponível=${disponivel}`);
           return produto;
           
-        } catch (error) {
-          console.error(`[GoogleSheets] ❌ Erro ao processar linha ${index + 2}:`, linha, error);
+        } catch (err) {
+          console.error(`[GoogleSheets] ❌ Erro ao processar linha ${index + 2}:`, linha, err);
           return null;
         }
       })
-      .filter((produto) => {
+      .filter((produto: ProdutoDisponibilidade | null): produto is ProdutoDisponibilidade => {
         const valido = produto !== null && 
                produto !== undefined && 
                typeof produto === 'object' &&
@@ -150,7 +150,7 @@ async function buscarDadosDaPlanilha(): Promise<ProdutoDisponibilidade[]> {
         }
         
         return valido;
-      }) as ProdutoDisponibilidade[];
+      });
     
     console.log(`[GoogleSheets] 📊 RESULTADO FINAL: ${produtos.length} produtos válidos carregados`);
     produtos.forEach(p => {
@@ -160,9 +160,9 @@ async function buscarDadosDaPlanilha(): Promise<ProdutoDisponibilidade[]> {
     console.log(`[GoogleSheets] 🎉 Sucesso! ${produtos.length} produtos carregados da planilha`);
     return produtos;
     
-  } catch (error) {
-    console.error('[GoogleSheets] 💥 Erro completo:', error);
-    throw error;
+  } catch (err) {
+    console.error('[GoogleSheets] 💥 Erro completo:', err);
+    throw err;
   }
 }
 
@@ -182,7 +182,7 @@ function usarDadosLocais(): ProdutoDisponibilidade[] {
 }
 
 // Função para interpretar disponibilidade com logs detalhados
-function parseDisponibilidade(valor: any): boolean {
+function parseDisponibilidade(valor: string | boolean | number | null | undefined): boolean {
   console.log(`[GoogleSheets] 🔍 Parseando disponibilidade - Valor recebido:`, valor, `(tipo: ${typeof valor})`);
   
   if (!valor || valor === '' || valor === null || valor === undefined) {
@@ -308,18 +308,18 @@ export async function testarAPIManualmente() {
     console.log('📡 Status:', response.status, response.statusText);
     
     if (!response.ok) {
-      const error = await response.text();
-      console.error('❌ Erro:', error);
-      return { sucesso: false, erro: error };
+      const errorText = await response.text();
+      console.error('❌ Erro:', errorText);
+      return { sucesso: false, erro: errorText };
     }
     
     const data = await response.json();
     console.log('✅ Dados:', data);
     return { sucesso: true, dados: data };
     
-  } catch (error) {
-    console.error('💥 Erro na requisição:', error);
-    return { sucesso: false, erro: error };
+  } catch (err) {
+    console.error('💥 Erro na requisição:', err);
+    return { sucesso: false, erro: err };
   }
 }
 
