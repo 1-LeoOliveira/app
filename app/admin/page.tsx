@@ -138,10 +138,10 @@ function LoginSimples({ onLoginSuccess }: { onLoginSuccess: () => void }) {
 
           <div className="mt-6 pt-6 border-t border-gray-200 text-center">
             <p className="text-sm text-gray-600">
-             <strong>Credenciais de teste:</strong><br />
+              <strong>Credenciais de teste:</strong><br />
               Email: admin@hamburgueria.com<br />
               Senha: admin123
-            </p>*/
+            </p>
           </div>
         </div>
       </div>
